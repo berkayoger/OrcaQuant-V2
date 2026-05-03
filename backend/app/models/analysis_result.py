@@ -4,5 +4,7 @@ from app.models.base import TimestampMixin, UUIDPrimaryKeyMixin
 
 class AnalysisResult(UUIDPrimaryKeyMixin, TimestampMixin, db.Model):
     __tablename__ = "analysis_results"
-    user_id = db.Column(db.String(36), nullable=True, index=True)
-    data = db.Column(db.JSON, nullable=True)
+
+    asset_id = db.Column(db.String(36), db.ForeignKey("assets.id"), nullable=False, index=True)
+    analysis_type = db.Column(db.String(64), nullable=False, default="technical", index=True)
+    payload_json = db.Column(db.JSON, nullable=False)
