@@ -26,3 +26,25 @@ def get_latest_analysis(symbol: str):
     if payload is None:
         return jsonify({"error": "analysis_not_found", "symbol": symbol.upper(), "analysis_type": analysis_type}), 404
     return jsonify(payload), 200
+
+
+@analysis_bp.post("/<symbol>/scenario-risk")
+def post_scenario_risk_analysis(symbol: str):
+    body = request.get_json(silent=True) or {}
+    timeframe = body.get("timeframe", "1d")
+    limit = int(body.get("limit", 200))
+    horizon_days = int(body.get("horizon_days", 14))
+    targets = body.get("targets", [])
+    if horizon_days < 1 or horizon_days > 365:
+        return jsonify({"error": "invalid_horizon_days"}), 400
+    for target in targets:
+        if target.get("direction") not in {"above", "below"}:
+            return jsonify({"error": "invalid_target_direction"}), 400
+    payload = AssetAnalysisService().run_scenario_risk_analysis(
+        symbol=symbol,
+        timeframe=timeframe,
+        limit=limit,
+        horizon_days=horizon_days,
+        targets=targets,
+    )
+    return jsonify(payload), 200

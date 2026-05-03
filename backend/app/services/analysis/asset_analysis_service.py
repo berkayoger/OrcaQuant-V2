@@ -1,10 +1,15 @@
 from __future__ import annotations
 
 from app.core.errors.exceptions import NotFoundError
+from app.core.engines.monte_carlo_engine import MonteCarloEngine
+from app.core.engines.risk_management_engine import RiskManagementEngine
+from app.core.engines.schemas import ScenarioTarget
 from app.core.engines.technical_signal_engine import TechnicalSignalEngine
 from app.repositories.analysis_repository import AnalysisRepository
 from app.repositories.asset_repository import AssetRepository
+from app.repositories.monte_carlo_repository import MonteCarloRepository
 from app.repositories.market_data_repository import MarketDataRepository
+from app.repositories.risk_repository import RiskRepository
 from app.services.market_data.ohlcv_service import OhlcvService
 
 
@@ -16,6 +21,10 @@ class AssetAnalysisService:
         ohlcv_service: OhlcvService | None = None,
         technical_signal_engine: TechnicalSignalEngine | None = None,
         analysis_repository: AnalysisRepository | None = None,
+        monte_carlo_repository: MonteCarloRepository | None = None,
+        risk_repository: RiskRepository | None = None,
+        monte_carlo_engine: MonteCarloEngine | None = None,
+        risk_management_engine: RiskManagementEngine | None = None,
     ) -> None:
         self.asset_repository = asset_repository or AssetRepository()
         self.market_data_repository = market_data_repository or MarketDataRepository()
@@ -25,6 +34,10 @@ class AssetAnalysisService:
         )
         self.technical_signal_engine = technical_signal_engine or TechnicalSignalEngine()
         self.analysis_repository = analysis_repository or AnalysisRepository()
+        self.monte_carlo_repository = monte_carlo_repository or MonteCarloRepository()
+        self.risk_repository = risk_repository or RiskRepository()
+        self.monte_carlo_engine = monte_carlo_engine or MonteCarloEngine()
+        self.risk_management_engine = risk_management_engine or RiskManagementEngine()
 
     def run_technical_analysis(self, symbol: str, timeframe: str = "1d", limit: int = 200) -> dict:
         asset = self.asset_repository.get_by_symbol(symbol)
@@ -65,3 +78,19 @@ class AssetAnalysisService:
             "analysis_type": analysis_type,
             "analysis": latest,
         }
+
+    def run_scenario_risk_analysis(self, symbol: str, timeframe: str = "1d", limit: int = 200, horizon_days: int = 14, targets: list[dict] | None = None) -> dict:
+        asset = self.asset_repository.get_by_symbol(symbol)
+        if not asset:
+            raise NotFoundError(f"Asset not found: {symbol}")
+        rows = self.market_data_repository.get_ohlcv(asset["id"], timeframe=timeframe, limit=limit)
+        if not rows:
+            self.ohlcv_service.sync_ohlcv(symbol=symbol, timeframe=timeframe, limit=limit)
+            rows = self.market_data_repository.get_ohlcv(asset["id"], timeframe=timeframe, limit=limit)
+        scenario_targets = [ScenarioTarget(name=t["name"], direction=t["direction"], price=float(t["price"])) for t in (targets or [])]
+        mc = self.monte_carlo_engine.run(rows, horizon_days=horizon_days, targets=scenario_targets)
+        risk = self.risk_management_engine.run(rows, mc)
+        saved = self.analysis_repository.create_analysis_result(asset_id=asset["id"], analysis_type="scenario_risk", payload={"monte_carlo": mc.to_dict(), "risk": risk.to_dict()})
+        self.monte_carlo_repository.create_result(asset_id=asset["id"], analysis_id=saved["id"], payload=mc.to_dict())
+        self.risk_repository.create_result(asset_id=asset["id"], analysis_id=saved["id"], payload=risk.to_dict())
+        return {"symbol": asset["symbol"], "timeframe": timeframe, "horizon_days": horizon_days, "analysis_type": "scenario_risk", "monte_carlo": mc.to_dict(), "risk": risk.to_dict(), "saved_analysis_id": saved["id"]}

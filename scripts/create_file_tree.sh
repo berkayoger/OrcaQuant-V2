@@ -36,6 +36,15 @@ critical_paths=(
   "frontend/src/features/analysis/api.ts"
   "docs/SECURITY_MODEL.md"
   ".github/workflows/backend-ci.yml"
+  "backend/app/core/engines/monte_carlo_engine.py"
+  "backend/app/core/engines/risk_management_engine.py"
+  "backend/app/repositories/monte_carlo_repository.py"
+  "backend/app/repositories/risk_repository.py"
+  "backend/tests/unit/test_monte_carlo_engine.py"
+  "backend/tests/unit/test_risk_management_engine.py"
+  "backend/tests/unit/test_scenario_risk_analysis_route.py"
+  "docs/MONTE_CARLO_ENGINE.md"
+  "docs/RISK_ENGINE.md"
 )
 
 for path in "${critical_paths[@]}"; do
