@@ -3,6 +3,7 @@ import os
 from flask import Flask
 
 from app.api.route_registry import register_routes
+from app.cli import register_cli
 from app.config import DevelopmentConfig, ProductionConfig, TestingConfig
 from app.core.errors.handlers import register_error_handlers
 from app.core.security.security_headers import apply_security_headers
@@ -24,4 +25,5 @@ def create_app(config_name: str | None = None) -> Flask:
     register_error_handlers(app)
     apply_security_headers(app)
     register_routes(app)
+    register_cli(app)
     return app
