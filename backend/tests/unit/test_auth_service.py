@@ -6,23 +6,25 @@ from app.services.auth.login_service import LoginService
 from app.services.auth.register_service import RegisterService
 
 
-def test_register_and_login_services() -> None:
-    repo = UserRepository()
-    register_service = RegisterService(repo)
-    login_service = LoginService(repo)
+def test_register_and_login_services(app) -> None:
+    with app.app_context():
+        repo = UserRepository()
+        register_service = RegisterService(repo)
+        login_service = LoginService(repo)
 
-    registered = register_service.execute({"email": "user@example.com", "password": "Password123"})
-    logged_in = login_service.execute({"email": "user@example.com", "password": "Password123"})
+        registered = register_service.execute({"email": "user@example.com", "password": "Password123"})
+        logged_in = login_service.execute({"email": "user@example.com", "password": "Password123"})
 
-    assert registered["access_token"]
-    assert logged_in["access_token"]
+        assert registered["access_token"]
+        assert logged_in["access_token"]
 
 
-def test_login_invalid_credentials() -> None:
-    repo = UserRepository()
-    register_service = RegisterService(repo)
-    login_service = LoginService(repo)
-    register_service.execute({"email": "user@example.com", "password": "Password123"})
+def test_login_invalid_credentials(app) -> None:
+    with app.app_context():
+        repo = UserRepository()
+        register_service = RegisterService(repo)
+        login_service = LoginService(repo)
+        register_service.execute({"email": "user@example.com", "password": "Password123"})
 
-    with pytest.raises(AuthenticationError):
-        login_service.execute({"email": "user@example.com", "password": "WrongPass123"})
+        with pytest.raises(AuthenticationError):
+            login_service.execute({"email": "user@example.com", "password": "WrongPass123"})
