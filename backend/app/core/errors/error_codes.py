@@ -1,1 +1,11 @@
-"""Placeholder module."""
+"""Application error code constants."""
+
+VALIDATION_ERROR = "validation_error"
+AUTHENTICATION_ERROR = "authentication_error"
+AUTHORIZATION_ERROR = "authorization_error"
+NOT_FOUND_ERROR = "not_found_error"
+RATE_LIMIT_ERROR = "rate_limit_error"
+FEATURE_LOCKED_ERROR = "feature_locked_error"
+TOKEN_EXPIRED_ERROR = "token_expired"
+TOKEN_INVALID_ERROR = "token_invalid"
+DUPLICATE_RESOURCE_ERROR = "duplicate_resource"
