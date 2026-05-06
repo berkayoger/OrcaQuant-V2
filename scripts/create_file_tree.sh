@@ -45,6 +45,15 @@ critical_paths=(
   "backend/tests/unit/test_scenario_risk_analysis_route.py"
   "docs/MONTE_CARLO_ENGINE.md"
   "docs/RISK_ENGINE.md"
+  "backend/app/core/engines/final_consensus_engine.py"
+  "backend/app/repositories/decision_repository.py"
+  "backend/app/models/decision_result.py"
+  "backend/tests/unit/test_final_consensus_engine.py"
+  "backend/tests/unit/test_decision_repository.py"
+  "backend/tests/unit/test_full_analysis_service.py"
+  "backend/tests/unit/test_full_analysis_route.py"
+  "docs/FINAL_CONSENSUS_ENGINE.md"
+  "docs/FULL_ANALYSIS_FLOW.md"
 )
 
 for path in "${critical_paths[@]}"; do
