@@ -4,5 +4,7 @@ from app.models.base import TimestampMixin, UUIDPrimaryKeyMixin
 
 class DecisionResult(UUIDPrimaryKeyMixin, TimestampMixin, db.Model):
     __tablename__ = "decision_results"
-    user_id = db.Column(db.String(36), nullable=True, index=True)
-    data = db.Column(db.JSON, nullable=True)
+
+    asset_id = db.Column(db.String(36), db.ForeignKey("assets.id"), nullable=False, index=True)
+    analysis_id = db.Column(db.String(36), db.ForeignKey("analysis_results.id"), nullable=True, index=True)
+    payload_json = db.Column(db.JSON, nullable=False)

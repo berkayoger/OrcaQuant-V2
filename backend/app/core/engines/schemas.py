@@ -112,3 +112,24 @@ class RiskResult:
         payload = asdict(self)
         payload["risk_level"] = self.risk_level.value
         return payload
+
+
+@dataclass
+class FinalConsensusResult:
+    decision: Decision
+    confidence: float
+    opportunity_score: float
+    risk_level: RiskLevel
+    technical_score: float
+    scenario_score: float
+    risk_score: float
+    summary: str
+    reasons: list[str]
+    warnings: list[str]
+    engine_scores: dict
+
+    def to_dict(self) -> dict:
+        payload = asdict(self)
+        payload["decision"] = self.decision.value
+        payload["risk_level"] = self.risk_level.value
+        return payload
