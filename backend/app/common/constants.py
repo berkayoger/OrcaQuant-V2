@@ -1,8 +1,10 @@
-"""Shared constants for V2 migration skeleton."""
-
 FEATURE_COIN_ANALYSIS = "coin_analysis"
+FEATURE_TECHNICAL_ANALYSIS = "technical_analysis"
+FEATURE_FULL_ANALYSIS = "full_analysis"
+FEATURE_SCENARIO_RISK = "scenario_risk"
 FEATURE_FORECAST = "forecast"
+FEATURE_DECISION_CONSENSUS = "decision_consensus"
 FEATURE_LLM_ANALYZE = "llm_analyze"
-FEATURE_PREDICT_DAILY = "predict_daily"
-
-# TODO(v1-migration): align with persisted feature-flag catalog.
+FEATURE_REALTIME_STREAM = "realtime_stream"
+FEATURE_API_ACCESS = "api_access"
+FEATURE_REPORT_EXPORT = "report_export"

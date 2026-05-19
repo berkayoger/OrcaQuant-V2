@@ -1,3 +1,2 @@
-"""Input validator skeleton."""
-
-# TODO(v1-migration): add concrete implementation from OrcaQuant V1.
+def is_non_empty_str(value: object) -> bool:
+    return isinstance(value, str) and bool(value.strip())
