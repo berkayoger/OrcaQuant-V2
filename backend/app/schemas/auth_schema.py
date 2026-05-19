@@ -13,10 +13,17 @@ class LoginRequest(BaseModel):
     password: str = Field(min_length=8)
 
 
+class AuthUser(BaseModel):
+    id: str
+    email: EmailStr
+    role: str
+    plan_code: str | None = None
+
+
 class AuthResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     access_token: str
+    refresh_token: str
     token_type: str = "bearer"
-    user_id: str
-    email: EmailStr
+    user: AuthUser

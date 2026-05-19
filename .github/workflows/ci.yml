@@ -11,5 +11,5 @@ jobs:
       - run: pytest
       - uses: actions/setup-node@v4
         with: {node-version: '20'}
-      - run: cd frontend && npm ci
+      - run: cd frontend && if [ -f package-lock.json ]; then npm ci; else npm install; fi
       - run: cd frontend && npm run build

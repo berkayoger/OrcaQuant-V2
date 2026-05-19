@@ -4,7 +4,7 @@ from pydantic import ValidationError as PydanticValidationError
 
 from app.core.errors.exceptions import AuthenticationError, ValidationError
 from app.core.security.password_hasher import verify_password
-from app.core.security.token_service import create_access_token
+from app.core.security.token_service import create_access_token, create_refresh_token
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth_schema import AuthResponse, LoginRequest
 
@@ -24,5 +24,5 @@ class LoginService:
             raise AuthenticationError("Invalid email or password")
 
         access_token = create_access_token(subject=user["id"], claims={"email": user["email"], "role": user["role"]})
-        response = AuthResponse(access_token=access_token, user_id=user["id"], email=user["email"])
-        return response.model_dump()
+        refresh_token, _ = create_refresh_token(user["id"])
+        return AuthResponse(access_token=access_token, refresh_token=refresh_token, user=user).model_dump()
