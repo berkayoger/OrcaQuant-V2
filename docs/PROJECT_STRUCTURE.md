@@ -45,3 +45,20 @@ Bu doküman, hedef dosya ağacını ve önerilen oluşturma sırasını baz alı
 ## Not
 
 İlk sprintte boş dosya + temel import düzeni yeterlidir. İçerik sprint bazlı doldurulmalıdır.
+
+## V1 -> V2 migration skeleton (2026-05-19)
+
+Bu repo artık V1'den güçlü alanların kademeli taşınması için aşağıdaki yeni iskelet alanlarını içerir:
+
+- `backend/app/auth`, `backend/app/users`, `backend/app/plans`, `backend/app/usage`
+- `backend/app/analysis`, `backend/app/decision` (+ `engines/`)
+- `backend/app/llm`, `backend/app/payments`, `backend/app/realtime`
+- `backend/app/cache`, `backend/app/audit`, `backend/app/db`, `backend/app/common`
+- `frontend/src/features/*` altında auth/analysis/decision/subscription/realtime/user sayfa ve API iskeletleri
+
+Detaylı yol haritası için:
+
+- `docs/MIGRATION_FROM_V1.md`
+- `docs/MODULE_MAP_V1_TO_V2.md`
+- `docs/API_ROADMAP.md`
+- `docs/FEATURE_ROADMAP.md`

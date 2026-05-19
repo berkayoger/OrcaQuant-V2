@@ -20,3 +20,11 @@ Bu aşamada tüm sistemin detay implementasyonu değil, proje iskeleti ve çekir
 4. Güvenlik, faturalama ve engine katmanlarına kademeli geçiş
 
 Ayrıntılı kapsam için `docs/PROJECT_STRUCTURE.md` dosyasına bakın.
+
+## V2 migration skeleton
+
+Bu sprintte, V1 yeteneklerinin V2'ye kademeli taşınması için import-safe iskelet modüller eklendi:
+
+- Backend'te `auth`, `users`, `plans`, `usage`, `analysis`, `decision`, `llm`, `payments`, `realtime`, `cache`, `audit`, `db`, `common` modülleri.
+- Frontend'te feature-bazlı sayfa/API/type iskeletleri.
+- Migration planı ve modül eşleşmeleri için yeni roadmap dokümantasyonu.
