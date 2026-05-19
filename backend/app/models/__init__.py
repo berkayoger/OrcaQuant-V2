@@ -26,3 +26,7 @@ from app.models.usage_event import UsageEvent
 from app.models.user import User
 from app.models.user_profile import UserProfile
 from app.models.watchlist import Watchlist
+from app.models.audit_event import AuditEvent
+from app.models.payment import PaymentTransaction
+from app.models.promo_code import PromoCode
+from app.models.usage import DailyUsage, FeatureLimit

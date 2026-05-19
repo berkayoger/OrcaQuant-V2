@@ -1,12 +1,40 @@
-version: '3.9'
 services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: orcaquant
+      POSTGRES_PASSWORD: orcaquant
+      POSTGRES_DB: orcaquant
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+
   backend:
-    image: python:3.12-slim
-    working_dir: /app
-    command: bash -lc "python -m http.server 5000"
-    ports:
-      - "5000:5000"
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file: [.env]
+    environment:
+      FLASK_ENV: development
+      DATABASE_URL: postgresql+psycopg2://orcaquant:orcaquant@postgres:5432/orcaquant
+      REDIS_URL: redis://redis:6379/0
+      RATE_LIMIT_STORAGE_URI: redis://redis:6379/1
+    depends_on: [postgres, redis]
+    ports: ["5000:5000"]
+
   frontend:
     image: node:20-alpine
     working_dir: /app
-    command: sh -lc "echo 'frontend placeholder' && tail -f /dev/null"
+    command: sh -lc "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    environment:
+      VITE_API_BASE_URL: http://localhost:5000/api/v1
+    volumes:
+      - ./frontend:/app
+    depends_on: [backend]
+    ports: ["5173:5173"]
+
+volumes:
+  pgdata:

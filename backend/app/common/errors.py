@@ -1,3 +1,2 @@
-"""Common error types skeleton."""
-
-# TODO(v1-migration): add concrete implementation from OrcaQuant V1.
+class AppError(Exception):
+    pass
