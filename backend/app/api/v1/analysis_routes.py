@@ -48,3 +48,29 @@ def post_scenario_risk_analysis(symbol: str):
         targets=targets,
     )
     return jsonify(payload), 200
+
+
+@analysis_bp.post("/<symbol>/full")
+def post_full_analysis(symbol: str):
+    body = request.get_json(silent=True) or {}
+    timeframe = body.get("timeframe", "1d")
+    limit = int(body.get("limit", 200))
+    horizon_days = int(body.get("horizon_days", 14))
+    targets = body.get("targets", [])
+
+    if limit < 50 or limit > 1000:
+        return jsonify({"error": "invalid_limit"}), 400
+    if horizon_days < 1 or horizon_days > 365:
+        return jsonify({"error": "invalid_horizon_days"}), 400
+    for target in targets:
+        if target.get("direction") not in {"above", "below"}:
+            return jsonify({"error": "invalid_target_direction"}), 400
+
+    payload = AssetAnalysisService().run_full_analysis(
+        symbol=symbol,
+        timeframe=timeframe,
+        limit=limit,
+        horizon_days=horizon_days,
+        targets=targets,
+    )
+    return jsonify(payload), 200
