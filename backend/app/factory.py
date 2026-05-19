@@ -8,6 +8,7 @@ from app.config import DevelopmentConfig, ProductionConfig, TestingConfig
 from app.core.errors.handlers import register_error_handlers
 from app.core.security.security_headers import apply_security_headers
 from app.extensions import cors, db, limiter, migrate
+import app.models  # noqa: F401
 
 CONFIG_MAP = {"development": DevelopmentConfig, "testing": TestingConfig, "production": ProductionConfig}
 
