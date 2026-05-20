@@ -7,9 +7,8 @@
 - Frontend build: `cd frontend && npm run build`
 - Seed plans: `cd backend && flask seed-plans`
 
-## Current module posture
-- Auth/register/login/refresh/logout implemented with hashed refresh-session storage.
-- Refresh token rotation and reuse detection are implemented (rotating refresh contract is active).
-- Usage guard enforces plan + feature limits on protected analysis routes.
-- Billing is disabled by default and returns placeholder `501` when enabled.
-- Realtime is disabled by default and only exposes status endpoint.
+## Current V2 posture
+- Implemented: auth/register/login/refresh/logout with hashed refresh-session storage and refresh-token rotation/reuse detection.
+- Implemented: usage guard for plan/feature limits and technical analysis routes, plus scenario-risk/full analysis skeleton routes.
+- Implemented: lightweight OpenAPI JSON docs at `/api/v1/docs/openapi.json` and docs status at `/api/v1/docs/`.
+- Not implemented yet: real billing provider flow (Iyzico or equivalent), realtime streaming transport, full admin CRUD surface, production market-data provider integration, optional OpenAPI UI.

@@ -20,7 +20,7 @@ def create_app(config_name: str | None = None) -> Flask:
 
     db.init_app(app)
     migrate.init_app(app, db)
-    cors.init_app(app)
+    cors.init_app(app, resources={r"/api/*": {"origins": app.config.get("CORS_ALLOWED_ORIGINS", [])}})
     limiter.init_app(app)
 
     register_error_handlers(app)
