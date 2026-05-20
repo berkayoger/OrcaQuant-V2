@@ -9,7 +9,7 @@ export const register = (payload: { email: string; password: string }) =>
   apiClient<AuthResponse>(endpoints.auth.register, { method: "POST", body: JSON.stringify(payload) });
 
 export const refresh = (refresh_token: string) =>
-  apiClient<Omit<AuthResponse, "refresh_token">>(endpoints.auth.refresh, {
+  apiClient<AuthResponse>(endpoints.auth.refresh, {
     method: "POST",
     body: JSON.stringify({ refresh_token }),
   });
