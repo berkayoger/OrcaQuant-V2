@@ -28,6 +28,7 @@ def test_openapi_json_contains_v2_core_routes(client):
     assert '/api/v1/analysis/{symbol}/full' in paths
     assert '/api/v1/billing/status' in paths
     assert '/api/v1/market/realtime/status' in paths
+    assert '/api/v1/limits/status' in paths
 
 
 def test_openapi_components_include_security_schemes_and_schemas(client):
@@ -41,6 +42,7 @@ def test_openapi_components_include_security_schemes_and_schemas(client):
     assert 'AuthResponse' in schemas
     assert 'User' in schemas
     assert 'UsageStatus' in schemas
+    assert 'LimitsStatus' in schemas
     assert 'TechnicalAnalysisResponse' in schemas
     assert 'ScenarioRiskResponse' in schemas
     assert 'FullAnalysisResponse' in schemas
@@ -72,3 +74,20 @@ def test_openapi_paths_match_registered_routes(client, app):
 
     assert '/api/v1/me/' in documented_paths
     assert '/api/v1/me/usage' in documented_paths
+
+
+def test_openapi_limits_status_schema_and_security(client):
+    res = client.get('/api/v1/docs/openapi.json')
+    payload = res.get_json()
+    path_item = payload['paths']['/api/v1/limits/status']['get']
+    assert path_item['security'] == [{'BearerAuth': []}]
+    schema_ref = path_item['responses']['200']['content']['application/json']['schema']['$ref']
+    assert schema_ref == '#/components/schemas/LimitsStatus'
+
+    schema = payload['components']['schemas']['LimitsStatus']
+    for field in ('plan_id', 'plan', 'features'):
+        assert field in schema['properties']
+
+    feature_schema = payload['components']['schemas']['LimitsFeatureStatus']['properties']
+    for field in ('feature_key', 'used', 'quota', 'remaining', 'percent', 'warning_level', 'exhausted'):
+        assert field in feature_schema
