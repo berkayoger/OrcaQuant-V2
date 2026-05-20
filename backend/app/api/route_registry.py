@@ -20,6 +20,7 @@ from app.api.v1.docs_routes import docs_bp
 from app.api.v1.health_routes import health_bp
 from app.api.v1.history_routes import history_bp
 from app.api.v1.market_routes import market_bp
+from app.api.v1.limits_routes import limits_bp
 from app.api.v1.portfolio_routes import portfolio_bp
 from app.api.v1.profile_routes import profile_bp
 from app.api.v1.scenario_routes import scenario_bp
@@ -47,6 +48,7 @@ def register_routes(app: Flask) -> None:
     app.register_blueprint(webhook_bp, url_prefix="/api/v1/webhooks")
     app.register_blueprint(dashboard_bp, url_prefix="/api/v1/dashboard")
     app.register_blueprint(docs_bp, url_prefix="/api/v1/docs")
+    app.register_blueprint(limits_bp, url_prefix="/api/v1/limits")
 
     app.register_blueprint(admin_dashboard_bp, url_prefix="/api/v1/admin/dashboard")
     app.register_blueprint(admin_user_bp, url_prefix="/api/v1/admin/users")

@@ -59,3 +59,16 @@ def test_openapi_analysis_paths_document_symbol_param_and_usage_headers(client):
     assert 'X-Usage-Used' in technical['responses']['200']['headers']
     assert 'X-Usage-Quota' in technical['responses']['200']['headers']
     assert 'X-Usage-Remaining' in technical['responses']['200']['headers']
+
+def test_openapi_paths_match_registered_routes(client, app):
+    res = client.get('/api/v1/docs/openapi.json')
+    documented_paths = set(res.get_json()['paths'].keys())
+
+    flask_paths = {rule.rule for rule in app.url_map.iter_rules()}
+    normalized_flask_paths = {p.replace('<string:symbol>', '{symbol}').replace('<symbol>', '{symbol}') for p in flask_paths}
+
+    for path in documented_paths:
+        assert path in normalized_flask_paths
+
+    assert '/api/v1/me/' in documented_paths
+    assert '/api/v1/me/usage' in documented_paths

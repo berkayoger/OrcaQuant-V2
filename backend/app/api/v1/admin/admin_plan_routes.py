@@ -6,6 +6,9 @@ from app.core.security.permission_guard import require_role
 from app.extensions import db
 from app.models.plan import Plan
 
+from app.models.usage import FeatureLimit
+from app.models.user import User
+
 admin_plan_bp = Blueprint("admin_plans", __name__)
 
 
@@ -123,3 +126,22 @@ def patch_admin_plan(plan_id: str):
 
     db.session.commit()
     return ok(_serialize_plan(plan))
+
+
+@admin_plan_bp.delete("/<plan_id>")
+@require_auth
+@require_role("admin")
+def delete_admin_plan(plan_id: str):
+    plan = Plan.query.filter_by(id=plan_id).one_or_none()
+    if not plan:
+        return error_response("not_found", "Plan not found", 404)
+
+    has_related = User.query.filter_by(plan_id=plan.id).first() is not None or FeatureLimit.query.filter_by(plan_id=plan.id).first() is not None
+    if has_related:
+        plan.is_active = False
+        db.session.commit()
+        return ok({"id": plan.id, "deleted": False, "soft_deleted": True, "is_active": plan.is_active})
+
+    db.session.delete(plan)
+    db.session.commit()
+    return ok({"id": plan_id, "deleted": True, "soft_deleted": False})

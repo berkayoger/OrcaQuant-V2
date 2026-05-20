@@ -88,3 +88,13 @@ def test_admin_limits_crud_and_usage_guard_behavior(client, app, monkeypatch):
 
     assert client.get('/api/v1/admin/limits').status_code == 401
     assert client.get('/api/v1/admin/limits', headers=_user_headers(client, 'user4@example.com')).status_code == 403
+
+def test_admin_plan_delete(client, app):
+    headers = _admin_headers(client, app, 'admin-delete@example.com')
+    create = client.post('/api/v1/admin/plans', headers=headers, json={'code': 'temp_plan', 'name': 'Temp Plan', 'sort_order': 11})
+    assert create.status_code == 201
+    created = create.get_json()['data']
+
+    delete_res = client.delete(f"/api/v1/admin/plans/{created['id']}", headers=headers)
+    assert delete_res.status_code == 200
+    assert delete_res.get_json()['data']['deleted'] is True
