@@ -12,3 +12,9 @@
 - Implemented: usage guard for plan/feature limits and technical analysis routes, plus scenario-risk/full analysis skeleton routes.
 - Implemented: lightweight OpenAPI JSON docs at `/api/v1/docs/openapi.json` and docs status at `/api/v1/docs/`.
 - Not implemented yet: real billing provider flow (Iyzico or equivalent), realtime streaming transport, full admin CRUD surface, production market-data provider integration, optional OpenAPI UI.
+
+
+## Deployment docs
+- Production deployment: `docs/PRODUCTION_DEPLOYMENT.md`
+- Environment variables: `docs/ENVIRONMENT_VARIABLES.md`
+- Backup/restore: `docs/BACKUP_RESTORE.md`
