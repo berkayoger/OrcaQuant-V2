@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from app.core.errors.exceptions import NotFoundError
 from app.repositories.asset_repository import AssetRepository
+from app.services.market_data.provider_protocol import AssetProviderProtocol
 
 
 class AssetService:
     def __init__(self, asset_repository: AssetRepository | None = None) -> None:
         self.asset_repository = asset_repository or AssetRepository()
 
-    def sync_assets_from_provider(self, provider) -> list[dict]:
+    def sync_assets_from_provider(self, provider: AssetProviderProtocol) -> list[dict]:
         synced = []
         for row in provider.list_assets():
             synced.append(

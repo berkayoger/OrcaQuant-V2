@@ -23,7 +23,7 @@ def test_register_assigns_free_plan_when_seeded(client, app):
 def test_missing_refresh_token_returns_400(client):
     res = client.post("/api/v1/auth/refresh", json={})
     assert res.status_code == 400
-    assert res.get_json()["code"] == "missing_refresh_token"
+    assert res.get_json()["error"]["code"] == "missing_refresh_token"
 
 
 def test_invalid_refresh_token_returns_401(client):

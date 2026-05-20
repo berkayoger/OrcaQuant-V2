@@ -3,6 +3,7 @@ from __future__ import annotations
 from app.core.errors.exceptions import NotFoundError
 from app.repositories.asset_repository import AssetRepository
 from app.repositories.market_data_repository import MarketDataRepository
+from app.services.market_data.provider_protocol import OhlcvProviderProtocol
 from app.services.market_data.sample_provider import SampleMarketDataProvider
 
 
@@ -11,7 +12,7 @@ class OhlcvService:
         self,
         asset_repository: AssetRepository | None = None,
         market_data_repository: MarketDataRepository | None = None,
-        provider: SampleMarketDataProvider | None = None,
+        provider: OhlcvProviderProtocol | None = None,
     ) -> None:
         self.asset_repository = asset_repository or AssetRepository()
         self.market_data_repository = market_data_repository or MarketDataRepository()

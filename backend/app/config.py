@@ -9,6 +9,8 @@ class BaseConfig:
     JWT_REFRESH_TOKEN_DAYS = int(os.getenv("JWT_REFRESH_TOKEN_DAYS", "7"))
     ENABLE_BILLING = os.getenv("ENABLE_BILLING", "false").lower() == "true"
     ENABLE_REALTIME = os.getenv("ENABLE_REALTIME", "false").lower() == "true"
+    MAX_CONTENT_LENGTH = int(os.getenv("MAX_CONTENT_LENGTH", str(1024 * 1024)))
+    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:5173").split(",") if origin.strip()]
 
 
 class DevelopmentConfig(BaseConfig):
