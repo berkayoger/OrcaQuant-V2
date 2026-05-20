@@ -9,7 +9,7 @@
 
 ## Current module posture
 - Auth/register/login/refresh/logout implemented with hashed refresh-session storage.
-- **Refresh token rotation/reuse detection is not implemented yet** (tracked as migration task).
+- Refresh token rotation and reuse detection are implemented (rotating refresh contract is active).
 - Usage guard enforces plan + feature limits on protected analysis routes.
 - Billing is disabled by default and returns placeholder `501` when enabled.
 - Realtime is disabled by default and only exposes status endpoint.
