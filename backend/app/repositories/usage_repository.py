@@ -19,4 +19,4 @@ class UsageRepository:
         return rec
 
     def get_feature_limit(self, plan_id: str, feature_key: str) -> FeatureLimit | None:
-        return FeatureLimit.query.filter_by(plan_id=plan_id, feature_key=feature_key, enabled=True).first()
+        return FeatureLimit.query.filter_by(plan_id=plan_id, feature_key=feature_key).first()

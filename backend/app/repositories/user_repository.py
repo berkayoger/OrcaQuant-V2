@@ -13,8 +13,8 @@ class UserRepository:
         if self.get_by_email(key):
             raise ValidationError("Email already registered", error_code=error_codes.DUPLICATE_RESOURCE_ERROR)
 
-        # TODO(v1-migration): seed and assign default free plan id.
-        user = User(email=key, password_hash=password_hash)
+        default_plan = Plan.query.filter_by(code="free", is_active=True).one_or_none()
+        user = User(email=key, password_hash=password_hash, plan_id=default_plan.id if default_plan else None)
         db.session.add(user)
         db.session.commit()
         return self._to_dict(user)

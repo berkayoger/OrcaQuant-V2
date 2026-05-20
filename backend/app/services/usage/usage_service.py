@@ -18,7 +18,14 @@ class UsageService:
         return self._build_status(used, limit.daily_quota if limit else None, feature_key)
 
     def check_limit(self, user_id: str, feature_key: str, plan_id: str | None = None) -> dict:
-        return self.get_status(user_id, feature_key, plan_id)
+        status = self.get_status(user_id, feature_key, plan_id)
+        status["limit_exists"] = bool(plan_id and self.repository.get_feature_limit(plan_id, feature_key))
+        if status["limit_exists"]:
+            limit = self.repository.get_feature_limit(plan_id, feature_key)
+            status["feature_enabled"] = bool(limit and limit.enabled and limit.daily_quota > 0)
+        else:
+            status["feature_enabled"] = False
+        return status
 
     def increment(self, user_id: str, feature_key: str, plan_id: str | None = None) -> dict:
         self.repository.upsert_increment(user_id, feature_key)

@@ -1,30 +1,18 @@
-# OrcaQuant v2
+# OrcaQuant V2
 
-Bu depo, OrcaQuant v2 için katmanlı SaaS mimarisi iskeletini içerir.
+OrcaQuant V2 is a layered Flask + React skeleton with authenticated analysis endpoints, plan-based usage limits, and disabled-by-default billing.
 
-## Mimari prensipleri
+## Current implemented scope
+- Auth: register/login/refresh/logout with JWT access+refresh and session-backed refresh validation.
+- Plans/usage: `seed-plans` CLI, per-feature daily quotas, protected analysis endpoints.
+- User self endpoints: `/api/v1/me/`, `/api/v1/me/usage`.
+- Billing skeleton: safe 501 behavior when disabled or not implemented.
 
-- **Route iş mantığı yazmaz.**
-- **Service HTTP bilmez.**
-- **Engine DB bilmez.**
-- **Repository karar vermez.**
-- **Security guard kritik akışlarda zorunludur.**
+## Quick start
+1. Copy env: `cp .env.example .env`.
+2. Run stack: `docker compose up --build`.
+3. Seed plans in backend container: `flask seed-plans`.
+4. Run tests: `pytest backend/tests`.
 
-## İlk kurulum hedefi
-
-Bu aşamada tüm sistemin detay implementasyonu değil, proje iskeleti ve çekirdek dosya ayrımı hedeflenir.
-
-1. Repo omurgası (`backend`, `frontend`, `infra`, `docs`, `scripts`, `.github`)
-2. Backend çekirdeği
-3. Frontend çekirdeği
-4. Güvenlik, faturalama ve engine katmanlarına kademeli geçiş
-
-Ayrıntılı kapsam için `docs/PROJECT_STRUCTURE.md` dosyasına bakın.
-
-## V2 migration skeleton
-
-Bu sprintte, V1 yeteneklerinin V2'ye kademeli taşınması için import-safe iskelet modüller eklendi:
-
-- Backend'te `auth`, `users`, `plans`, `usage`, `analysis`, `decision`, `llm`, `payments`, `realtime`, `cache`, `audit`, `db`, `common` modülleri.
-- Frontend'te feature-bazlı sayfa/API/type iskeletleri.
-- Migration planı ve modül eşleşmeleri için yeni roadmap dokümantasyonu.
+## Migration note
+Database migrations must be reviewed before production deploy. See `backend/migrations/README.md`.

@@ -1,5 +1,4 @@
 # Feature Roadmap
+Implemented: auth core, session-backed refresh, plan seed, usage enforcement, protected analysis routes, billing skeleton, frontend auth storage.
 
-- Auth and session lifecycle migration.
-- Plan/usage and quota enforcement migration.
-- Analysis + decision + LLM integration migration.
+Next milestones follow `docs/V1_MIGRATION_CHECKLIST.md` order.
