@@ -3,6 +3,8 @@ from __future__ import annotations
 from app.core.errors.exceptions import NotFoundError
 from app.repositories.asset_repository import AssetRepository
 from app.repositories.market_data_repository import MarketDataRepository
+from app.services.market_data.exceptions import MarketDataProviderError
+from app.services.market_data.provider_factory import get_market_data_provider
 from app.services.market_data.provider_protocol import OhlcvProviderProtocol
 from app.services.market_data.sample_provider import SampleMarketDataProvider
 
@@ -16,18 +18,24 @@ class OhlcvService:
     ) -> None:
         self.asset_repository = asset_repository or AssetRepository()
         self.market_data_repository = market_data_repository or MarketDataRepository()
-        self.provider = provider or SampleMarketDataProvider()
+        self.provider = provider or get_market_data_provider()
 
     def sync_ohlcv(self, symbol: str, timeframe: str = "1d", limit: int = 200) -> dict:
         asset = self.asset_repository.get_by_symbol(symbol)
         if not asset:
             raise NotFoundError(f"Asset not found: {symbol}")
 
-        rows = self.provider.get_ohlcv(symbol=symbol, timeframe=timeframe, limit=limit)
+        try:
+            rows = self.provider.get_ohlcv(symbol=symbol, timeframe=timeframe, limit=limit)
+            source = getattr(self.provider, "provider_name", self.provider.__class__.__name__.replace("MarketDataProvider", "").lower())
+        except MarketDataProviderError:
+            fallback = SampleMarketDataProvider()
+            rows = fallback.get_ohlcv(symbol=symbol, timeframe=timeframe, limit=limit)
+            source = "sample_fallback"
         count = self.market_data_repository.upsert_ohlcv(
             asset_id=asset["id"],
             rows=rows,
-            source="sample",
+            source=source,
             timeframe=timeframe,
         )
         return {"asset": asset["symbol"], "timeframe": timeframe, "rows_written": count}

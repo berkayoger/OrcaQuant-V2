@@ -5,6 +5,7 @@ from random import Random
 
 
 class SampleMarketDataProvider:
+    provider_name = "sample"
     _ASSETS = [
         {"symbol": "BTC", "name": "Bitcoin", "asset_type": "crypto"},
         {"symbol": "ETH", "name": "Ethereum", "asset_type": "crypto"},
