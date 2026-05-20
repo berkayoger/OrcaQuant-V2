@@ -1,3 +1,6 @@
 # Security Model
-
-Defense in depth: authn/authz, rate limits, audit logging, and secure headers.
+- Layered guards: auth, usage, admin/permission guards.
+- JWT access/refresh separation with typed token payloads.
+- Refresh session revocation supported via logout.
+- Usage guard fails closed for protected features.
+- Billing callback must not mutate subscription without provider verification.

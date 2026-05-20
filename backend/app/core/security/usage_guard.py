@@ -18,9 +18,15 @@ def enforce_usage_limit(feature_key: str):
                 return error_response("unauthorized", "Auth required", 401)
 
             service = UsageService()
-            status = service.check_limit(user.id, feature_key, getattr(user, "plan_id", None))
-            if status["quota"] == 0 and feature_key in PROTECTED_FEATURES:
-                return error_response("feature_disabled", "Feature quota is not configured", 403)
+            plan_id = getattr(user, "plan_id", None)
+            if feature_key in PROTECTED_FEATURES and not plan_id:
+                return error_response("plan_required", "An active plan is required", 403)
+
+            status = service.check_limit(user.id, feature_key, plan_id)
+            if feature_key in PROTECTED_FEATURES and not status.get("limit_exists"):
+                return error_response("feature_not_configured", "Feature limit is not configured for this plan", 403)
+            if feature_key in PROTECTED_FEATURES and not status.get("feature_enabled"):
+                return error_response("feature_disabled", "Feature is disabled for this plan", 403)
             if status["exhausted"]:
                 return error_response("quota_exceeded", "Usage limit reached", 429)
 
