@@ -109,7 +109,7 @@ def iyzico_callback():
     txn.raw_payload_json = json.dumps(result.raw_payload)
 
     if result.is_verified and txn.status == "paid":
-        user = User.query.get(txn.user_id)
+        user = db.session.get(User, txn.user_id)
         if user:
             user.subscription_status = "active"
     db.session.commit()

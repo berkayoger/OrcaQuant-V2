@@ -1,5 +1,6 @@
 from app.models.payment import PaymentTransaction
 from app.models.user import User
+from app.extensions import db
 
 
 def _register_and_access(client, email='bill@example.com'):
@@ -62,7 +63,7 @@ def test_callback_unverified_does_not_activate_subscription(client, app):
     assert cb.get_json()['verified'] is False
 
     with app.app_context():
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         assert user.subscription_status == 'free'
 
 
@@ -84,5 +85,5 @@ def test_callback_mock_verified_can_activate_subscription(client, app):
     assert cb.get_json()['status'] == 'paid'
 
     with app.app_context():
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         assert user.subscription_status == 'active'

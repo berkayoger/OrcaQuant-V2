@@ -70,7 +70,7 @@ def _build_minimal_openapi() -> dict:
                     "required": ["plan_id", "plan", "features"],
                     "properties": {
                         "plan_id": {"type": "string", "nullable": True},
-                        "plan": {"$ref": "#/components/schemas/LimitsPlan", "nullable": True},
+                        "plan": {"nullable": True, "allOf": [{"$ref": "#/components/schemas/LimitsPlan"}]},
                         "features": {
                             "type": "array",
                             "items": {"$ref": "#/components/schemas/LimitsFeatureStatus"},

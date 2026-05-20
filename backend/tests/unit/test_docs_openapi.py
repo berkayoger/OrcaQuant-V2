@@ -39,16 +39,8 @@ def test_openapi_components_include_security_schemes_and_schemas(client):
     assert 'BearerAuth' in components['securitySchemes']
 
     schemas = components['schemas']
-    assert 'AuthResponse' in schemas
-    assert 'User' in schemas
-    assert 'UsageStatus' in schemas
-    assert 'LimitsStatus' in schemas
-    assert 'TechnicalAnalysisResponse' in schemas
-    assert 'ScenarioRiskResponse' in schemas
-    assert 'FullAnalysisResponse' in schemas
-    assert 'BillingStatus' in schemas
-    assert 'RealtimeStatus' in schemas
-    assert 'ErrorResponse' in schemas
+    for name in ('AuthResponse', 'User', 'UsageStatus', 'LimitsStatus', 'TechnicalAnalysisResponse', 'ScenarioRiskResponse', 'FullAnalysisResponse', 'BillingStatus', 'RealtimeStatus', 'ErrorResponse'):
+        assert name in schemas
 
 
 def test_openapi_analysis_paths_document_symbol_param_and_usage_headers(client):
@@ -61,6 +53,7 @@ def test_openapi_analysis_paths_document_symbol_param_and_usage_headers(client):
     assert 'X-Usage-Used' in technical['responses']['200']['headers']
     assert 'X-Usage-Quota' in technical['responses']['200']['headers']
     assert 'X-Usage-Remaining' in technical['responses']['200']['headers']
+
 
 def test_openapi_paths_match_registered_routes(client, app):
     res = client.get('/api/v1/docs/openapi.json')
@@ -76,18 +69,46 @@ def test_openapi_paths_match_registered_routes(client, app):
     assert '/api/v1/me/usage' in documented_paths
 
 
+def _walk_schema_nodes(node):
+    if isinstance(node, dict):
+        yield node
+        for value in node.values():
+            yield from _walk_schema_nodes(value)
+    elif isinstance(node, list):
+        for item in node:
+            yield from _walk_schema_nodes(item)
+
+
+def test_openapi_avoids_json_schema_union_syntax_and_unsafe_ref_siblings(client):
+    payload = client.get('/api/v1/docs/openapi.json').get_json()
+    allowed_ref_siblings = {'$ref', 'description', 'title'}
+
+    for node in _walk_schema_nodes(payload):
+        node_type = node.get('type')
+        if isinstance(node_type, list):
+            raise AssertionError(f'OpenAPI 3.0 schema uses unsupported union type list: {node_type}')
+
+        if '$ref' in node and len(node.keys()) > 1:
+            assert set(node.keys()).issubset(allowed_ref_siblings), f'Unsafe $ref sibling keys: {set(node.keys())}'
+
+
 def test_openapi_limits_status_schema_and_security(client):
-    res = client.get('/api/v1/docs/openapi.json')
-    payload = res.get_json()
+    payload = client.get('/api/v1/docs/openapi.json').get_json()
     path_item = payload['paths']['/api/v1/limits/status']['get']
     assert path_item['security'] == [{'BearerAuth': []}]
-    schema_ref = path_item['responses']['200']['content']['application/json']['schema']['$ref']
-    assert schema_ref == '#/components/schemas/LimitsStatus'
+    assert path_item['responses']['200']['content']['application/json']['schema']['$ref'] == '#/components/schemas/LimitsStatus'
 
     schema = payload['components']['schemas']['LimitsStatus']
+    assert schema['required'] == ['plan_id', 'plan', 'features']
     for field in ('plan_id', 'plan', 'features'):
         assert field in schema['properties']
 
-    feature_schema = payload['components']['schemas']['LimitsFeatureStatus']['properties']
+    plan_prop = schema['properties']['plan']
+    assert plan_prop['nullable'] is True
+    assert plan_prop['allOf'][0]['$ref'] == '#/components/schemas/LimitsPlan'
+
+    feature_schema = payload['components']['schemas']['LimitsFeatureStatus']
     for field in ('feature_key', 'used', 'quota', 'remaining', 'percent', 'warning_level', 'exhausted'):
-        assert field in feature_schema
+        assert field in feature_schema['properties']
+    for field in ('feature_key', 'used', 'quota', 'remaining', 'percent', 'warning_level', 'exhausted'):
+        assert field in feature_schema['required']
