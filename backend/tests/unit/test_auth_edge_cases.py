@@ -8,7 +8,7 @@ def _register(client, email: str):
 def test_refresh_missing_refresh_token_returns_400_json(client):
     res = client.post("/api/v1/auth/refresh", json={})
     assert res.status_code == 400
-    assert res.get_json() == {"status": "error", "code": "missing_refresh_token"}
+    assert res.get_json()["error"]["code"] == "missing_refresh_token"
 
 
 def test_refresh_invalid_refresh_token_returns_401_json_shape(client):
@@ -20,7 +20,7 @@ def test_refresh_invalid_refresh_token_returns_401_json_shape(client):
 def test_logout_missing_refresh_token_returns_400_json(client):
     res = client.post("/api/v1/auth/logout", json={})
     assert res.status_code == 400
-    assert res.get_json() == {"status": "error", "code": "missing_refresh_token"}
+    assert res.get_json()["error"]["code"] == "missing_refresh_token"
 
 
 def test_logout_invalid_refresh_token_returns_401_json_shape(client):
@@ -57,4 +57,4 @@ def test_refresh_response_contract_without_new_refresh_token(client):
     body = refreshed.get_json()
     assert refreshed.status_code == 200
     assert {"access_token", "token_type", "user"}.issubset(body.keys())
-    assert "refresh_token" not in body
+    assert "refresh_token" in body

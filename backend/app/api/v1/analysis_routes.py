@@ -22,6 +22,13 @@ def _normalize_symbol(symbol: str) -> str:
     return symbol.strip().upper()
 
 
+def _response_from_service_payload(payload: object):
+    if isinstance(payload, tuple) and len(payload) == 2:
+        body, status = payload
+        return jsonify(body), int(status)
+    return jsonify(payload), 200
+
+
 @analysis_bp.get("/")
 def get_analysis_status():
     return jsonify({"module": "analysis", "status": "ready"}), 200
@@ -36,7 +43,7 @@ def get_technical_analysis(symbol: str):
     if err:
         return jsonify(err), 400
     payload = AssetAnalysisService().run_technical_analysis(symbol=_normalize_symbol(symbol), timeframe=timeframe, limit=limit)
-    return jsonify(payload), 200
+    return _response_from_service_payload(payload)
 
 
 @analysis_bp.get("/<symbol>/latest")
@@ -46,7 +53,7 @@ def get_latest_analysis(symbol: str):
     payload = AssetAnalysisService().get_latest_analysis(symbol=_normalize_symbol(symbol), analysis_type=analysis_type)
     if payload is None:
         return jsonify({"error": "analysis_not_found", "symbol": symbol.upper(), "analysis_type": analysis_type}), 404
-    return jsonify(payload), 200
+    return _response_from_service_payload(payload)
 
 
 @analysis_bp.post("/<symbol>/scenario-risk")
@@ -66,7 +73,7 @@ def post_scenario_risk_analysis(symbol: str):
         if target.get("direction") not in {"above", "below"}:
             return jsonify({"error": "invalid_target_direction"}), 400
     payload = AssetAnalysisService().run_scenario_risk_analysis(symbol=_normalize_symbol(symbol), timeframe=timeframe, limit=limit, horizon_days=horizon_days, targets=targets)
-    return jsonify(payload), 200
+    return _response_from_service_payload(payload)
 
 
 @analysis_bp.post("/<symbol>/full")
@@ -87,4 +94,4 @@ def post_full_analysis(symbol: str):
             return jsonify({"error": "invalid_target_direction"}), 400
 
     payload = AssetAnalysisService().run_full_analysis(symbol=_normalize_symbol(symbol), timeframe=timeframe, limit=limit, horizon_days=horizon_days, targets=targets)
-    return jsonify(payload), 200
+    return _response_from_service_payload(payload)

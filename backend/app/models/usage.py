@@ -1,3 +1,4 @@
+from datetime import date
 from app.extensions import db
 from app.models.base import TimestampMixin, UUIDPrimaryKeyMixin
 
@@ -18,5 +19,5 @@ class DailyUsage(UUIDPrimaryKeyMixin, TimestampMixin, db.Model):
     )
     user_id = db.Column(db.String(36), db.ForeignKey("users.id"), nullable=False, index=True)
     feature_key = db.Column(db.String(64), nullable=False, index=True)
-    usage_date = db.Column(db.Date, nullable=False, index=True)
+    usage_date = db.Column(db.Date, nullable=False, index=True, default=date.today)
     used_count = db.Column(db.Integer, nullable=False, default=0)

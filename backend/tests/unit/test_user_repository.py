@@ -11,7 +11,7 @@ def test_repository_create_and_get_user(app):
         fetched = repo.get_by_email("repo@example.com")
         by_id = repo.get_by_id(created["id"])
 
-        assert set(created.keys()) == {"id", "email", "password_hash", "role", "is_active"}
+        assert set(created.keys()) == {"id", "email", "password_hash", "role", "is_active", "plan_id", "plan_code", "subscription_status", "subscription_started_at", "subscription_expires_at", "token_version"}
         assert fetched["email"] == "repo@example.com"
         assert by_id["id"] == created["id"]
 

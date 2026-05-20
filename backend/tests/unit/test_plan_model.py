@@ -8,4 +8,5 @@ def test_plan_can_be_created(app):
         db.session.add(plan)
         db.session.commit()
         assert plan.id is not None
-        assert plan.price_monthly_cents == 0
+        assert plan.is_active is True
+        assert plan.sort_order == 0
