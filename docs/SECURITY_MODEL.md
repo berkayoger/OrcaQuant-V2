@@ -13,3 +13,5 @@
 - Suspicious login/reuse alerting
 - Refresh token family tracking
 - Admin-driven session revocation tooling
+
+- Future hardening step (not in this PR): migrate refresh/access token handling from localStorage to HttpOnly secure cookies with CSRF protection for browser sessions.
