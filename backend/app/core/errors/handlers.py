@@ -19,3 +19,8 @@ def register_error_handlers(app: Flask) -> None:
     def _handle_pydantic_error(error: PydanticValidationError):
         wrapped = ValidationError("Invalid request payload")
         return jsonify(_to_payload(wrapped)), wrapped.status_code
+
+
+    @app.errorhandler(Exception)
+    def _handle_unexpected_error(_error: Exception):
+        return jsonify({"error": {"code": "internal_server_error", "message": "Internal server error"}}), 500

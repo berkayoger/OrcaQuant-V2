@@ -1,8 +1,5 @@
-# Database Schema (Current)
-Core models in use:
-- `User`, `Session`, `ApiKey`
-- `Plan`, `FeatureLimit`, `DailyUsage`
-- `PaymentTransaction`, `PromoCode`, `AuditEvent`
-- Analysis domain models already present in `backend/app/models/*`.
+# Database Schema Notes
 
-Use migrations for persistent DB changes; do not rely on `create_all` outside tests.
+Track migrations for core entities: User, Session, ApiKey, Plan, FeatureLimit, DailyUsage, PaymentTransaction, PromoCode, AuditEvent, plus asset/market/analysis/decision/risk models.
+
+Use Flask-Migrate/Alembic workflows in `migrations/README.md` and `backend/migrations/README.md`.

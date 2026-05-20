@@ -1,12 +1,9 @@
-# Migration From V1
-This repo intentionally migrates V1 in small safe steps.
-
-## Implemented
-- Authentication baseline with sessions.
-- Plan + quota guard baseline.
-- Billing disabled-by-default skeleton.
-
-## Not implemented yet
-- Real provider checkout/verification.
-- Realtime production stream.
-- Full token rotation + reuse detection.
+# V1 Migration Checklist (ordered)
+1. refresh token rotation/reuse detection
+2. Alembic migration initialization
+3. admin plan/limit management
+4. decision consensus migration
+5. analysis caching/reliability
+6. billing/iyzico implementation
+7. realtime price streaming
+8. frontend dashboard integration

@@ -1,12 +1,9 @@
-# Plan Limits
-- Seed with `flask seed-plans`.
-- Default registration behavior: assign `free` plan only when it exists.
-- Guard behavior (fail-closed):
-  - no plan => `403 plan_required`
-  - no feature config => `403 feature_not_configured`
-  - disabled/zero quota => `403 feature_disabled`
-  - exceeded => `429 quota_exceeded`
-- Success responses include:
-  - `X-Usage-Used`
-  - `X-Usage-Quota`
-  - `X-Usage-Remaining`
+# Plan Limits and Usage
+
+Protected analysis features fail closed:
+- no plan => `403 plan_required`
+- missing plan limit => `403 feature_not_configured`
+- disabled/zero quota => `403 feature_disabled`
+- exhausted quota => `429 quota_exceeded`
+
+Usage is incremented only after successful protected responses.
