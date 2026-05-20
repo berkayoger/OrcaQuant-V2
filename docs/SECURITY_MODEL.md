@@ -1,6 +1,6 @@
 # Security Model
-- Layered guards: auth, usage, admin/permission guards.
-- JWT access/refresh separation with typed token payloads.
-- Refresh session revocation supported via logout.
-- Usage guard fails closed for protected features.
-- Billing callback must not mutate subscription without provider verification.
+
+- JWT access + refresh flow with hashed refresh-session storage.
+- Generic JSON 500 handler prevents leaking exception internals.
+- Usage guards and auth guards are fail-closed for protected features.
+- Billing and realtime are disabled-by-default safety posture.

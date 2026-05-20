@@ -1,21 +1,7 @@
-# Backend Migrations
-Run from `backend/`.
+# Backend Alembic Migrations
 
-## Initialize locally (one-time)
-- `flask db init`
+Use Flask-Migrate/Alembic.
 
-## Create migration
-- `flask db migrate -m "describe change"`
-
-## Apply migration
-- `flask db upgrade`
-
-## Models that must be tracked
-At minimum:
-- User, Session, ApiKey
-- Plan, FeatureLimit, DailyUsage
-- PaymentTransaction, PromoCode, AuditEvent
-- Existing analysis/decision/risk/asset/market models in `app/models`.
-
-## Production warning
-Always review generated migration scripts before deploy; auto-generated diffs can be unsafe.
+- Create: `flask db migrate -m "message"`
+- Apply: `flask db upgrade`
+- Review generated operations before commit and production rollout.

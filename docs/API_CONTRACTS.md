@@ -1,14 +1,17 @@
 # API Contracts
+
 ## AuthResponse
 ```json
 {
   "access_token": "...",
   "refresh_token": "...",
   "token_type": "bearer",
-  "user": {"id":"...","email":"...","role":"user","plan_code":"free"}
+  "user": {"id": "...", "email": "...", "role": "...", "plan_code": "free"}
 }
 ```
 
-## Billing
-- `GET /api/v1/billing/status` -> enabled flag.
-- `POST /api/v1/billing/initiate` -> 501 when disabled or not implemented.
+## Billing status
+- `GET /api/v1/billing/status` => disabled by default.
+
+## Realtime status
+- `GET /api/v1/market/realtime/status` => disabled by default or not_implemented.

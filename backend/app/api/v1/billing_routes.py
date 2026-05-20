@@ -8,7 +8,7 @@ billing_bp = Blueprint("billing", __name__)
 @billing_bp.get("/status")
 def get_billing_status():
     enabled = bool(current_app.config.get("ENABLE_BILLING", False))
-    return jsonify({"module": "billing", "enabled": enabled, "status": "ready" if enabled else "disabled"}), 200
+    return jsonify({"module": "billing", "enabled": enabled, "status": "not_implemented" if enabled else "disabled"}), 200
 
 
 @billing_bp.post("/initiate")
@@ -17,4 +17,4 @@ def initiate_billing():
     enabled = bool(current_app.config.get("ENABLE_BILLING", False))
     if not enabled:
         return jsonify({"code": "billing_disabled", "message": "Billing is disabled"}), 501
-    return jsonify({"code": "not_implemented", "message": "TODO(v1-migration): iyzico payment initiation and verification"}), 501
+    return jsonify({"code": "not_implemented", "message": "TODO(v1-migration): implement iyzico verification and transaction idempotency"}), 501

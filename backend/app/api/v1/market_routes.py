@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, jsonify, request
 
 from app.services.market_data.ohlcv_service import OhlcvService
 
@@ -20,3 +20,10 @@ def sync_ohlcv(symbol: str):
     limit = int(request.args.get("limit", 200))
     service = OhlcvService()
     return jsonify(service.sync_ohlcv(symbol, timeframe, limit)), 200
+
+
+@market_bp.get("/realtime/status")
+def realtime_status():
+    enabled = bool(current_app.config.get("ENABLE_REALTIME", False))
+    status = "not_implemented" if enabled else "disabled"
+    return jsonify({"module": "realtime", "enabled": enabled, "status": status}), 200

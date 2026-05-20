@@ -1,4 +1,9 @@
-# Feature Roadmap
-Implemented: auth core, session-backed refresh, plan seed, usage enforcement, protected analysis routes, billing skeleton, frontend auth storage.
-
-Next milestones follow `docs/V1_MIGRATION_CHECKLIST.md` order.
+# V1 Migration Checklist (ordered)
+1. refresh token rotation/reuse detection
+2. Alembic migration initialization
+3. admin plan/limit management
+4. decision consensus migration
+5. analysis caching/reliability
+6. billing/iyzico implementation
+7. realtime price streaming
+8. frontend dashboard integration

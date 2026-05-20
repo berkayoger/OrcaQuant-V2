@@ -1,18 +1,15 @@
-# OrcaQuant V2
+# OrcaQuant-V2
 
-OrcaQuant V2 is a layered Flask + React skeleton with authenticated analysis endpoints, plan-based usage limits, and disabled-by-default billing.
+## Local quickstart
+- `docker compose up --build`
+- Copy env: `cp .env.example .env` (create values locally, never commit secrets).
+- Backend tests: `cd backend && pytest`
+- Frontend build: `cd frontend && npm run build`
+- Seed plans: `cd backend && flask seed-plans`
 
-## Current implemented scope
-- Auth: register/login/refresh/logout with JWT access+refresh and session-backed refresh validation.
-- Plans/usage: `seed-plans` CLI, per-feature daily quotas, protected analysis endpoints.
-- User self endpoints: `/api/v1/me/`, `/api/v1/me/usage`.
-- Billing skeleton: safe 501 behavior when disabled or not implemented.
-
-## Quick start
-1. Copy env: `cp .env.example .env`.
-2. Run stack: `docker compose up --build`.
-3. Seed plans in backend container: `flask seed-plans`.
-4. Run tests: `pytest backend/tests`.
-
-## Migration note
-Database migrations must be reviewed before production deploy. See `backend/migrations/README.md`.
+## Current module posture
+- Auth/register/login/refresh/logout implemented with hashed refresh-session storage.
+- **Refresh token rotation/reuse detection is not implemented yet** (tracked as migration task).
+- Usage guard enforces plan + feature limits on protected analysis routes.
+- Billing is disabled by default and returns placeholder `501` when enabled.
+- Realtime is disabled by default and only exposes status endpoint.
