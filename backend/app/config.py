@@ -15,6 +15,9 @@ class BaseConfig:
         for origin in os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:5173").split(",")
         if origin.strip()
     ]
+    MARKET_DATA_PROVIDER = os.getenv("MARKET_DATA_PROVIDER", "sample").strip().lower()
+    MARKET_DATA_TIMEOUT_SECONDS = int(os.getenv("MARKET_DATA_TIMEOUT_SECONDS", "10"))
+    MARKET_DATA_CACHE_TTL_SECONDS = int(os.getenv("MARKET_DATA_CACHE_TTL_SECONDS", "300"))
 
 
 class DevelopmentConfig(BaseConfig):
