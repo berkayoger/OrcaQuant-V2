@@ -80,12 +80,12 @@ def test_billing_and_realtime_statuses(client, app):
 
     app.config["ENABLE_BILLING"] = True
     resp2 = client.post("/api/v1/billing/initiate", headers=headers, json={})
-    assert resp2.status_code == 501 and resp2.get_json()["code"] == "not_implemented"
+    assert resp2.status_code == 400 and resp2.get_json()["code"] == "missing_idempotency_key"
 
     app.config["ENABLE_REALTIME"] = False
     assert client.get("/api/v1/market/realtime/status").get_json()["status"] == "disabled"
     app.config["ENABLE_REALTIME"] = True
-    assert client.get("/api/v1/market/realtime/status").get_json()["status"] == "not_implemented"
+    assert client.get("/api/v1/market/realtime/status").get_json()["status"] == "enabled"
 
 
 def test_generic_500_json_handler(app, client):

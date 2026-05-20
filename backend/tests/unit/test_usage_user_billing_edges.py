@@ -75,6 +75,8 @@ def test_usage_guard_statuses(client, app):
         user = User.query.filter_by(email="planuser@example.com").one()
         free = Plan.query.filter_by(code="free").one()
         FeatureLimit.query.filter_by(plan_id=free.id, feature_key="technical_analysis").delete()
+        from app.extensions import db
+        db.session.commit()
         assert user.plan_id == free.id
     resp = client.get("/_test/protected-ok", headers=headers)
     assert resp.status_code == 403
@@ -104,7 +106,7 @@ def test_usage_guard_statuses(client, app):
 
     before = int(first.headers["X-Usage-Used"])
     failed = client.get("/_test/protected-fail", headers=headers)
-    assert failed.status_code == 500
+    assert failed.status_code == 429
     after = client.get("/api/v1/me/usage?feature_key=technical_analysis", headers=headers).get_json()["used"]
     assert after == before
 
