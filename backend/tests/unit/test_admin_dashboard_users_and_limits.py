@@ -103,3 +103,58 @@ def test_limits_status_warning_levels(client, app):
         feature = res.get_json()['features'][0]
         assert feature['warning_level'] == expected
         assert feature['exhausted'] is (used >= 100)
+
+
+def test_limits_status_plan_without_feature_limits_returns_empty_features(client, app):
+    headers = _user_headers(client, 'limits-plan-no-feature@example.com')
+    with app.app_context():
+        user = User.query.filter_by(email='limits-plan-no-feature@example.com').one()
+        plan = Plan(code='solo', name='Solo', is_active=True, sort_order=3)
+        db.session.add(plan)
+        db.session.flush()
+        user.plan_id = plan.id
+        db.session.commit()
+
+    res = client.get('/api/v1/limits/status', headers=headers)
+    payload = res.get_json()
+    assert payload['plan']['id'] is not None
+    assert payload['plan']['code'] == 'solo'
+    assert payload['features'] == []
+
+
+def test_limits_status_quota_zero_disabled_feature_behavior(client, app):
+    headers = _user_headers(client, 'limits-zero@example.com')
+    with app.app_context():
+        user = User.query.filter_by(email='limits-zero@example.com').one()
+        plan = Plan(code='zero', name='Zero', is_active=True, sort_order=4)
+        db.session.add(plan)
+        db.session.flush()
+        user.plan_id = plan.id
+        db.session.add(FeatureLimit(plan_id=plan.id, feature_key='scenario_risk', daily_quota=0, enabled=False))
+        db.session.commit()
+
+    res = client.get('/api/v1/limits/status', headers=headers)
+    feature = res.get_json()['features'][0]
+    assert feature['quota'] == 0
+    assert feature['used'] == 0
+    assert feature['remaining'] == 0
+    assert feature['percent'] == 0
+    assert feature['warning_level'] == '100'
+    assert feature['exhausted'] is True
+
+
+def test_limits_status_warning_level_null_below_threshold(client, app):
+    headers = _user_headers(client, 'limits-warning-null@example.com')
+    with app.app_context():
+        user = User.query.filter_by(email='limits-warning-null@example.com').one()
+        plan = Plan(code='warnnull', name='WarnNull', is_active=True, sort_order=5)
+        db.session.add(plan)
+        db.session.flush()
+        user.plan_id = plan.id
+        db.session.add(FeatureLimit(plan_id=plan.id, feature_key='full_analysis', daily_quota=100, enabled=True))
+        db.session.commit()
+
+    res = client.get('/api/v1/limits/status', headers=headers)
+    feature = res.get_json()['features'][0]
+    assert feature['warning_level'] is None
+    assert feature['exhausted'] is False
