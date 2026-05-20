@@ -11,5 +11,6 @@ class PaymentTransaction(UUIDPrimaryKeyMixin, TimestampMixin, db.Model):
     plan_code = db.Column(db.String(32), nullable=False)
     amount = db.Column(db.Numeric(10, 2), nullable=False)
     currency = db.Column(db.String(8), nullable=False, default="TRY")
-    status = db.Column(db.String(32), nullable=False, default="pending")
+    idempotency_key = db.Column(db.String(128), nullable=False, index=True)
+    status = db.Column(db.String(32), nullable=False, default="created")
     raw_payload_json = db.Column(db.Text, nullable=True)
