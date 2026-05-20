@@ -13,6 +13,9 @@ class FeatureLimit(UUIDPrimaryKeyMixin, TimestampMixin, db.Model):
 
 class DailyUsage(UUIDPrimaryKeyMixin, TimestampMixin, db.Model):
     __tablename__ = "daily_usage"
+    __table_args__ = (
+        db.UniqueConstraint("user_id", "feature_key", "usage_date", name="uq_daily_usage_user_feature_date"),
+    )
     user_id = db.Column(db.String(36), db.ForeignKey("users.id"), nullable=False, index=True)
     feature_key = db.Column(db.String(64), nullable=False, index=True)
     usage_date = db.Column(db.Date, nullable=False, index=True)
