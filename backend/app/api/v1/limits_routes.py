@@ -1,6 +1,7 @@
 from flask import Blueprint, g, jsonify
 
 from app.core.security.auth_guard import require_auth
+from app.models.plan import Plan
 from app.models.usage import FeatureLimit
 from app.services.usage.usage_service import UsageService
 
@@ -23,6 +24,7 @@ def _warning_level(percent: int, exhausted: bool) -> str | None:
 def get_limits_status():
     usage_service = UsageService()
     limits = FeatureLimit.query.filter_by(plan_id=g.current_user.plan_id).order_by(FeatureLimit.feature_key.asc()).all() if g.current_user.plan_id else []
+    plan = Plan.query.get(g.current_user.plan_id) if g.current_user.plan_id else None
 
     features = []
     for limit in limits:
@@ -41,4 +43,18 @@ def get_limits_status():
             }
         )
 
-    return jsonify({"plan_id": g.current_user.plan_id, "features": features}), 200
+    return jsonify(
+        {
+            "plan_id": g.current_user.plan_id,
+            "plan": (
+                {
+                    "id": plan.id,
+                    "code": plan.code,
+                    "name": plan.name,
+                }
+                if plan
+                else None
+            ),
+            "features": features,
+        }
+    ), 200

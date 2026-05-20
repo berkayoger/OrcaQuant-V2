@@ -61,3 +61,12 @@ jobs:
           pip install pip-audit -r requirements.txt
       - name: Dependency vulnerability scan
         run: pip-audit -r requirements.txt
+
+  config-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate docker compose configs
+        run: |
+          docker compose config
+          docker compose -f docker-compose.prod.yml config

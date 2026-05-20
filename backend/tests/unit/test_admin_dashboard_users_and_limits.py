@@ -62,7 +62,44 @@ def test_limits_status_response(client, app):
     assert res.status_code == 200
     payload = res.get_json()
     assert payload['plan_id'] is not None
+    assert payload['plan']['code'] == 'starter'
     assert len(payload['features']) == 1
     feature = payload['features'][0]
     for key in ('feature_key', 'used', 'quota', 'remaining', 'percent', 'warning_level', 'exhausted'):
         assert key in feature
+
+
+def test_limits_status_no_plan_returns_null_plan_and_empty_features(client):
+    headers = _user_headers(client, 'limits-no-plan@example.com')
+    res = client.get('/api/v1/limits/status', headers=headers)
+    assert res.status_code == 200
+    payload = res.get_json()
+    assert payload['plan_id'] is None
+    assert payload['plan'] is None
+    assert payload['features'] == []
+
+
+def test_limits_status_warning_levels(client, app):
+    headers = _user_headers(client, 'limits-warning@example.com')
+    with app.app_context():
+        user = User.query.filter_by(email='limits-warning@example.com').one()
+        plan = Plan(code='warning', name='Warning', is_active=True, sort_order=2)
+        db.session.add(plan)
+        db.session.flush()
+        user.plan_id = plan.id
+        db.session.add(FeatureLimit(plan_id=plan.id, feature_key='technical_analysis', daily_quota=100, enabled=True))
+        db.session.commit()
+
+    for used, expected in ((75, '75'), (90, '90'), (100, '100')):
+        with app.app_context():
+            from app.models.usage import DailyUsage
+            row = DailyUsage.query.filter_by(feature_key='technical_analysis').first()
+            if row is None:
+                row = DailyUsage(user_id=User.query.filter_by(email='limits-warning@example.com').one().id, feature_key='technical_analysis', used_count=used)
+                db.session.add(row)
+            row.used_count = used
+            db.session.commit()
+        res = client.get('/api/v1/limits/status', headers=headers)
+        feature = res.get_json()['features'][0]
+        assert feature['warning_level'] == expected
+        assert feature['exhausted'] is (used >= 100)
