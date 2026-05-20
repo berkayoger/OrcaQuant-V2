@@ -1,6 +1,5 @@
 from flask import Blueprint, jsonify, request
 
-from app.core.errors.exceptions import AuthenticationError
 from app.core.security.token_service import decode_refresh_token
 from app.repositories.user_repository import UserRepository
 from app.services.auth.login_service import LoginService
@@ -54,7 +53,7 @@ def refresh():
     payload = request.get_json(silent=True) or {}
     token = payload.get("refresh_token")
     if not token:
-        return jsonify({"status": "error", "code": "missing_refresh_token"}), 400
+        return jsonify({"error": {"code": "missing_refresh_token", "message": "refresh_token is required"}}), 400
     return jsonify(_refresh_service.execute(token)), 200
 
 
@@ -63,10 +62,11 @@ def logout():
     payload = request.get_json(silent=True) or {}
     token = payload.get("refresh_token")
     if not token:
-        return jsonify({"status": "error", "code": "missing_refresh_token"}), 400
+        return jsonify({"error": {"code": "missing_refresh_token", "message": "refresh_token is required"}}), 400
 
     decoded = decode_refresh_token(token)
     jti = decoded.get("jti")
-    if not jti or not _logout_service.execute(jti):
-        raise AuthenticationError("Session is not active")
+    if not jti:
+        return jsonify({"error": {"code": "token_invalid", "message": "Invalid token"}}), 401
+    _logout_service.execute(jti)
     return jsonify({"status": "ok"}), 200

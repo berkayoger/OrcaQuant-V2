@@ -1,5 +1,5 @@
 # V1 Migration Checklist (ordered)
-1. refresh token rotation/reuse detection
+1. ✅ refresh token rotation/reuse detection
 2. Alembic migration initialization
 3. admin plan/limit management
 4. decision consensus migration
