@@ -14,6 +14,7 @@ def test_openapi_json_contains_required_top_level_keys(client):
     assert 'openapi' in payload
     assert 'info' in payload
     assert 'paths' in payload
+    assert 'components' in payload
 
 
 def test_openapi_json_contains_v2_core_routes(client):
@@ -21,6 +22,40 @@ def test_openapi_json_contains_v2_core_routes(client):
     paths = res.get_json()['paths']
     assert '/api/v1/auth/register' in paths
     assert '/api/v1/auth/refresh' in paths
-    assert '/api/v1/analysis/full' in paths
+    assert '/api/v1/analysis/{symbol}/technical' in paths
+    assert '/api/v1/analysis/{symbol}/latest' in paths
+    assert '/api/v1/analysis/{symbol}/scenario-risk' in paths
+    assert '/api/v1/analysis/{symbol}/full' in paths
     assert '/api/v1/billing/status' in paths
     assert '/api/v1/market/realtime/status' in paths
+
+
+def test_openapi_components_include_security_schemes_and_schemas(client):
+    res = client.get('/api/v1/docs/openapi.json')
+    components = res.get_json()['components']
+
+    assert 'securitySchemes' in components
+    assert 'BearerAuth' in components['securitySchemes']
+
+    schemas = components['schemas']
+    assert 'AuthResponse' in schemas
+    assert 'User' in schemas
+    assert 'UsageStatus' in schemas
+    assert 'TechnicalAnalysisResponse' in schemas
+    assert 'ScenarioRiskResponse' in schemas
+    assert 'FullAnalysisResponse' in schemas
+    assert 'BillingStatus' in schemas
+    assert 'RealtimeStatus' in schemas
+    assert 'ErrorResponse' in schemas
+
+
+def test_openapi_analysis_paths_document_symbol_param_and_usage_headers(client):
+    res = client.get('/api/v1/docs/openapi.json')
+    paths = res.get_json()['paths']
+
+    technical = paths['/api/v1/analysis/{symbol}/technical']['get']
+    assert technical['parameters'][0]['$ref'] == '#/components/parameters/SymbolParam'
+    assert 'headers' in technical['responses']['200']
+    assert 'X-Usage-Used' in technical['responses']['200']['headers']
+    assert 'X-Usage-Quota' in technical['responses']['200']['headers']
+    assert 'X-Usage-Remaining' in technical['responses']['200']['headers']
