@@ -10,6 +10,7 @@ from app.api.v1.admin.admin_plan_routes import admin_plan_bp
 from app.api.v1.admin.admin_security_routes import admin_security_bp
 from app.api.v1.admin.admin_system_routes import admin_system_bp
 from app.api.v1.admin.admin_user_routes import admin_user_bp
+from app.api.v1.admin.admin_usage_routes import admin_usage_bp
 from app.api.v1.alert_routes import alert_bp
 from app.api.v1.analysis_routes import analysis_bp
 from app.api.v1.asset_routes import asset_bp
@@ -52,6 +53,7 @@ def register_routes(app: Flask) -> None:
 
     app.register_blueprint(admin_dashboard_bp, url_prefix="/api/v1/admin/dashboard")
     app.register_blueprint(admin_user_bp, url_prefix="/api/v1/admin/users")
+    app.register_blueprint(admin_usage_bp, url_prefix="/api/v1/admin/usage")
     app.register_blueprint(admin_plan_bp, url_prefix="/api/v1/admin/plans")
     app.register_blueprint(admin_limit_bp, url_prefix="/api/v1/admin/limits")
     app.register_blueprint(admin_feature_flag_bp, url_prefix="/api/v1/admin/feature-flags")

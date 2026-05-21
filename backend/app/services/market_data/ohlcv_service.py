@@ -28,7 +28,7 @@ class OhlcvService:
         try:
             rows = self.provider.get_ohlcv(symbol=symbol, timeframe=timeframe, limit=limit)
             source = getattr(self.provider, "provider_name", self.provider.__class__.__name__.replace("MarketDataProvider", "").lower())
-        except MarketDataProviderError:
+        except (MarketDataProviderError, TimeoutError, OSError, ValueError):
             fallback = SampleMarketDataProvider()
             rows = fallback.get_ohlcv(symbol=symbol, timeframe=timeframe, limit=limit)
             source = "sample_fallback"

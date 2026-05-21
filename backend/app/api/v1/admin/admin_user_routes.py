@@ -3,6 +3,7 @@ from flask import Blueprint, request
 from app.common.responses import error_response, ok
 from app.core.security.auth_guard import require_auth
 from app.core.security.permission_guard import require_role
+from app.extensions import db
 from app.models.user import User
 
 
@@ -49,3 +50,27 @@ def list_admin_users():
             },
         }
     )
+
+
+@admin_user_bp.patch("/<user_id>")
+@require_auth
+@require_role("admin")
+def patch_admin_user(user_id: str):
+    payload = request.get_json(silent=True) or {}
+    allowed = {"role", "plan_id", "subscription_status"}
+    unknown = set(payload.keys()) - allowed
+    if unknown:
+        return error_response("validation_error", f"Unknown fields: {', '.join(sorted(unknown))}", 400)
+    user = User.query.filter_by(id=user_id).one_or_none()
+    if not user:
+        return error_response("not_found", "User not found", 404)
+    if "role" in payload:
+        if payload["role"] not in {"user", "admin"}:
+            return error_response("validation_error", "role must be user or admin", 400)
+        user.role = payload["role"]
+    if "plan_id" in payload:
+        user.plan_id = payload["plan_id"]
+    if "subscription_status" in payload:
+        user.subscription_status = payload["subscription_status"]
+    db.session.commit()
+    return ok(_serialize_user(user))
