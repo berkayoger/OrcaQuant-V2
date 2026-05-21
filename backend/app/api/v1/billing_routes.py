@@ -9,8 +9,8 @@ from app.core.security.auth_guard import require_auth
 from app.extensions import db
 from app.models.payment import PaymentTransaction
 from app.models.user import User
-from app.payments.iyzico_provider import IyzicoProvider
 from app.payments.provider_base import ProviderInitiateRequest
+from app.payments.provider_factory import get_payment_provider
 
 billing_bp = Blueprint("billing", __name__)
 
@@ -52,7 +52,7 @@ def initiate_billing():
 
     txn = PaymentTransaction(
         user_id=g.current_user.id,
-        provider="iyzico",
+        provider=current_app.config.get("BILLING_PROVIDER", "fake").lower(),
         plan_code=plan_code,
         amount=amount,
         currency=currency,
@@ -62,7 +62,7 @@ def initiate_billing():
     db.session.add(txn)
     db.session.flush()
 
-    provider = IyzicoProvider()
+    provider = get_payment_provider(txn.provider)
     provider_response = provider.initiate_payment(
         ProviderInitiateRequest(
             transaction_id=txn.id,
@@ -99,11 +99,12 @@ def iyzico_callback():
     if not conversation_id:
         return jsonify({"code": "missing_conversation_id"}), 400
 
-    txn = PaymentTransaction.query.filter_by(provider="iyzico", provider_conversation_id=conversation_id).first()
+    txn = PaymentTransaction.query.filter_by(provider=current_app.config.get("BILLING_PROVIDER", "fake").lower(), provider_conversation_id=conversation_id).first()
     if not txn:
         return jsonify({"code": "transaction_not_found"}), 404
 
-    result = IyzicoProvider().verify_callback(payload=payload, signature=signature)
+    provider = get_payment_provider("iyzico")
+    result = provider.verify_callback(payload=payload, signature=signature)
     txn.status = result.status if result.is_verified else "failed"
     txn.provider_payment_id = result.provider_payment_id or txn.provider_payment_id
     txn.raw_payload_json = json.dumps(result.raw_payload)
