@@ -10,6 +10,7 @@
 ## Current V2 posture
 - Implemented: auth/register/login/refresh/logout with hashed refresh-session storage and refresh-token rotation/reuse detection.
 - Implemented: account lifecycle foundation: username reservation, username changes, email verification codes, code login, forgot/reset password, and stale-token guardrails.
+- Implemented: site-user foundation: profile, onboarding, settings, notification/privacy preferences, home summary, account export, session management, password change, and account deactivation.
 - Implemented: usage guard for plan/feature limits and technical analysis routes, plus scenario-risk/full analysis skeleton routes.
 - Implemented: lightweight OpenAPI JSON docs at `/api/v1/docs/openapi.json` and docs status at `/api/v1/docs/`.
 - Implemented: billing provider boundary with fake/dev provider, Iyzico adapter slot, readiness reporting, callback event persistence, idempotent initiation, and production config guardrails.
@@ -21,4 +22,5 @@
 - Environment variables: `docs/ENVIRONMENT_VARIABLES.md`
 - External dependency binding plan: `docs/EXTERNAL_DEPENDENCIES.md`
 - Account lifecycle: `docs/ACCOUNT_LIFECYCLE.md`
+- Site user features: `docs/SITE_USER_FEATURES.md`
 - Backup/restore: `docs/BACKUP_RESTORE.md`
