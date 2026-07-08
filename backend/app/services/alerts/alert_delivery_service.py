@@ -128,6 +128,7 @@ class AlertDeliveryService:
             data=data,
         )
         db.session.add(row)
+        db.session.flush()
         return {"created": True, "row": row}
 
     @staticmethod
