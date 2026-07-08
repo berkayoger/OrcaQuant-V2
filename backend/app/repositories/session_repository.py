@@ -29,6 +29,18 @@ class SessionRepository:
     def get_active_by_jti(self, jti: str) -> Session | None:
         return Session.query.filter_by(jti=jti, is_active=True).first()
 
+    def list_for_user(self, user_id: str) -> list[Session]:
+        return Session.query.filter_by(user_id=user_id).order_by(Session.created_at.desc()).all()
+
+    def revoke_by_id_for_user(self, session_id: str, user_id: str) -> bool:
+        session = Session.query.filter_by(id=session_id, user_id=user_id, is_active=True).one_or_none()
+        if not session:
+            return False
+        session.is_active = False
+        session.revoked_at = datetime.now(UTC)
+        db.session.commit()
+        return True
+
     def revoke_by_jti(self, jti: str) -> bool:
         session = self.get_active_by_jti(jti)
         if not session:
