@@ -10,6 +10,7 @@ from app.models.job_run import JobRun
 from app.models.limit_policy import LimitPolicy
 from app.models.market_price import MarketPrice
 from app.models.monte_carlo_result import MonteCarloResult
+from app.models.notification import Notification
 from app.models.payment_event import PaymentEvent
 from app.models.permission import Permission
 from app.models.plan import Plan
