@@ -11,6 +11,20 @@ type MarketOverview = {
   watchpoints: string[];
 };
 
+type RadarSignal = {
+  type: string;
+  label: string;
+  severity: "positive" | "warning" | "danger" | "info" | "neutral";
+};
+
+type AlertSuggestion = {
+  symbol: string;
+  metric: string;
+  condition: string;
+  threshold: number;
+  title: string;
+};
+
 type RadarItem = {
   symbol: string;
   name: string;
@@ -23,6 +37,10 @@ type RadarItem = {
   summary: string;
   top_advantage: string;
   top_risk: string;
+  signals: RadarSignal[];
+  suggested_alerts: AlertSuggestion[];
+  is_watchlisted: boolean;
+  data_source: string;
 };
 
 type CockpitAsset = RadarItem & {
@@ -45,18 +63,32 @@ type CockpitPayload = {
   status: string;
   investment_advice: boolean;
   data_source: string;
+  provider_sources?: string[];
   disclaimer: string;
   market_overview: MarketOverview;
   radar: RadarItem[];
+  watchlist_focus?: RadarItem[];
+  suggested_alerts: AlertSuggestion[];
   assets: CockpitAsset[];
   personas: Persona[];
 };
+
+const fallbackSignals: RadarSignal[] = [
+  { type: "trend_continuation", label: "Trend devamı", severity: "positive" },
+  { type: "neutral_watch", label: "Nötr izleme", severity: "neutral" }
+];
+
+const fallbackAlerts: AlertSuggestion[] = [
+  { symbol: "SOL", metric: "opportunity_score", condition: ">=", threshold: 80, title: "SOL fırsat skoru güçlenirse haber ver" },
+  { symbol: "BTC", metric: "risk_score", condition: ">=", threshold: 65, title: "BTC risk baskısı yükselirse uyar" }
+];
 
 const fallbackCockpit: CockpitPayload = {
   module: "market_cockpit",
   status: "frontend_fallback",
   investment_advice: false,
   data_source: "frontend_fallback_until_api_connects",
+  provider_sources: ["frontend_fallback"],
   disclaimer: "OrcaQuant yatırım tavsiyesi vermez; riskleri, avantajları ve izlenebilir sinyalleri karar desteği olarak açıklar.",
   market_overview: {
     regime: "mixed",
@@ -82,7 +114,11 @@ const fallbackCockpit: CockpitPayload = {
       change_24h_pct: 2.4,
       summary: "SOL radarın üst sıralarında; trend yapısı canlı ama risk orta bölgede.",
       top_advantage: "Hacim tarafında ortalamanın üzerinde ilgi var.",
-      top_risk: "Risk orta bölgede; piyasa genel yönüyle doğrulanmalı."
+      top_risk: "Risk orta bölgede; piyasa genel yönüyle doğrulanmalı.",
+      signals: fallbackSignals,
+      suggested_alerts: [fallbackAlerts[0]],
+      is_watchlisted: false,
+      data_source: "frontend_fallback"
     },
     {
       symbol: "BTC",
@@ -95,9 +131,15 @@ const fallbackCockpit: CockpitPayload = {
       change_24h_pct: 0.8,
       summary: "BTC izlenebilir bölgede; piyasa yön filtresi olarak takip edilmeli.",
       top_advantage: "Trend yapısı destekleniyor.",
-      top_risk: "Piyasa ani yön değiştirebilir."
+      top_risk: "Piyasa ani yön değiştirebilir.",
+      signals: fallbackSignals,
+      suggested_alerts: [fallbackAlerts[1]],
+      is_watchlisted: false,
+      data_source: "frontend_fallback"
     }
   ],
+  watchlist_focus: [],
+  suggested_alerts: fallbackAlerts,
   assets: [],
   personas: [
     { key: "pro_analyst", title: "Analiz bilen kullanıcı", value: "Teknik, hacim ve risk verilerini tek kokpitte görür." },
@@ -107,6 +149,18 @@ const fallbackCockpit: CockpitPayload = {
 };
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
+const WATCHLIST_KEY = "orcaquant.watchlist.symbols";
+const LOCAL_ALERTS_KEY = "orcaquant.local.alerts";
+
+function loadStoredWatchlist() {
+  if (typeof localStorage === "undefined") return ["BTC", "SOL"];
+  try {
+    const parsed = JSON.parse(localStorage.getItem(WATCHLIST_KEY) || "[]") as string[];
+    return parsed.length ? parsed : ["BTC", "SOL"];
+  } catch {
+    return ["BTC", "SOL"];
+  }
+}
 
 function scoreText(score: number) {
   return `${Math.round(score)}/100`;
@@ -129,17 +183,39 @@ function formatChange(value: number) {
   return `${sign}${value.toFixed(2)}%`;
 }
 
+function normalizeSymbol(symbol: string) {
+  return symbol.toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
+
 export default function DashboardPage() {
   const [cockpit, setCockpit] = useState<CockpitPayload>(fallbackCockpit);
   const [loading, setLoading] = useState(true);
   const [apiState, setApiState] = useState<"live" | "fallback">("fallback");
+  const [watchlist, setWatchlist] = useState<string[]>(loadStoredWatchlist);
+  const [symbolInput, setSymbolInput] = useState("");
+  const [localAlertCount, setLocalAlertCount] = useState(() => {
+    if (typeof localStorage === "undefined") return 0;
+    try {
+      return (JSON.parse(localStorage.getItem(LOCAL_ALERTS_KEY) || "[]") as AlertSuggestion[]).length;
+    } catch {
+      return 0;
+    }
+  });
+
+  useEffect(() => {
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem(WATCHLIST_KEY, JSON.stringify(watchlist));
+    }
+  }, [watchlist]);
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadCockpit() {
       try {
-        const response = await fetch(`${API_BASE_URL}/dashboard/`);
+        setLoading(true);
+        const query = watchlist.length ? `?watchlist=${encodeURIComponent(watchlist.join(","))}` : "";
+        const response = await fetch(`${API_BASE_URL}/dashboard/${query}`);
         if (!response.ok) throw new Error(`Dashboard API failed: ${response.status}`);
         const payload = (await response.json()) as CockpitPayload;
         if (!cancelled) {
@@ -158,7 +234,7 @@ export default function DashboardPage() {
 
     loadCockpit();
     return () => { cancelled = true; };
-  }, []);
+  }, [watchlist]);
 
   const assets = useMemo(() => cockpit.assets.length ? cockpit.assets : cockpit.radar.map((item) => ({
     ...item,
@@ -169,6 +245,29 @@ export default function DashboardPage() {
     advantages: [item.top_advantage],
     risks: [item.top_risk]
   })), [cockpit.assets, cockpit.radar]);
+
+  const watchlistSet = useMemo(() => new Set(watchlist), [watchlist]);
+  const watchlistFocus = cockpit.watchlist_focus && cockpit.watchlist_focus.length ? cockpit.watchlist_focus : cockpit.radar.filter((item) => watchlistSet.has(item.symbol));
+
+  function toggleWatchlist(symbol: string) {
+    const clean = normalizeSymbol(symbol);
+    setWatchlist((current) => current.includes(clean) ? current.filter((item) => item !== clean) : [...current, clean].slice(0, 12));
+  }
+
+  function addSymbol() {
+    const clean = normalizeSymbol(symbolInput);
+    if (!clean) return;
+    setWatchlist((current) => current.includes(clean) ? current : [...current, clean].slice(0, 12));
+    setSymbolInput("");
+  }
+
+  function saveLocalAlert(alertSuggestion: AlertSuggestion) {
+    if (typeof localStorage === "undefined") return;
+    const existing = JSON.parse(localStorage.getItem(LOCAL_ALERTS_KEY) || "[]") as AlertSuggestion[];
+    const next = [...existing, alertSuggestion];
+    localStorage.setItem(LOCAL_ALERTS_KEY, JSON.stringify(next));
+    setLocalAlertCount(next.length);
+  }
 
   return (
     <main className="oq-page">
@@ -184,6 +283,7 @@ export default function DashboardPage() {
           <span className={`oq-dot oq-dot-${apiState}`} />
           <strong>{apiState === "live" ? "API bağlı" : "Fallback mod"}</strong>
           <small>{loading ? "Kokpit yükleniyor..." : cockpit.status}</small>
+          <small>{localAlertCount} yerel alarm taslağı</small>
         </div>
       </section>
 
@@ -207,6 +307,30 @@ export default function DashboardPage() {
         </ul>
       </section>
 
+      <section className="oq-panel oq-watchlist-panel">
+        <div>
+          <p className="oq-section-label">Kişisel takip listesi</p>
+          <h2>Takip etmekten yorulduğun varlıkları kokpite sabitle.</h2>
+          <div className="oq-watchlist-input">
+            <input value={symbolInput} onChange={(event) => setSymbolInput(event.target.value)} placeholder="Örn. ETH" onKeyDown={(event) => { if (event.key === "Enter") addSymbol(); }} />
+            <button onClick={addSymbol}>Takibe al</button>
+          </div>
+          <div className="oq-watchlist-chips">
+            {watchlist.map((symbol) => <button key={symbol} onClick={() => toggleWatchlist(symbol)}>{symbol} ×</button>)}
+          </div>
+        </div>
+        <div>
+          <p className="oq-section-label">Watchlist odağı</p>
+          {watchlistFocus.length ? watchlistFocus.map((item) => (
+            <div className="oq-mini-row" key={item.symbol}>
+              <strong>{item.symbol}</strong>
+              <span>{item.label}</span>
+              <small>{scoreText(item.opportunity_score)}</small>
+            </div>
+          )) : <p className="oq-muted">Henüz takip edilen varlık yok.</p>}
+        </div>
+      </section>
+
       <section className="oq-section-heading">
         <div>
           <p className="oq-section-label">Orca Radar</p>
@@ -224,12 +348,34 @@ export default function DashboardPage() {
                 <span>{item.name}</span>
               </div>
               <p>{item.summary}</p>
+              <div className="oq-signal-row">
+                {item.signals.map((signal) => <span className={`oq-signal oq-signal-${signal.severity}`} key={`${item.symbol}-${signal.type}`}>{signal.label}</span>)}
+              </div>
             </div>
             <div className="oq-score-block">
               <span>{item.label}</span>
               <strong>{scoreText(item.opportunity_score)}</strong>
               <small>{riskLabel(item.risk_level)} · {formatChange(item.change_24h_pct)}</small>
+              <button onClick={() => toggleWatchlist(item.symbol)}>{watchlistSet.has(item.symbol) ? "Takipten çıkar" : "Takibe al"}</button>
             </div>
+          </article>
+        ))}
+      </section>
+
+      <section className="oq-section-heading">
+        <div>
+          <p className="oq-section-label">Alarm önerileri</p>
+          <h2>Sürekli takip etmek yerine önemli değişimlere alarm kur.</h2>
+        </div>
+      </section>
+
+      <section className="oq-grid oq-grid-3 oq-alert-grid">
+        {cockpit.suggested_alerts.slice(0, 6).map((alertSuggestion) => (
+          <article className="oq-alert-card" key={`${alertSuggestion.symbol}-${alertSuggestion.metric}-${alertSuggestion.threshold}`}>
+            <span>{alertSuggestion.symbol}</span>
+            <h3>{alertSuggestion.title}</h3>
+            <p>{alertSuggestion.metric} {alertSuggestion.condition} {alertSuggestion.threshold}</p>
+            <button onClick={() => saveLocalAlert(alertSuggestion)}>Alarm taslağı oluştur</button>
           </article>
         ))}
       </section>
@@ -252,10 +398,14 @@ export default function DashboardPage() {
               <strong>{scoreText(asset.opportunity_score)}</strong>
             </header>
             <p>{asset.plain_language_summary}</p>
+            <div className="oq-signal-row">
+              {asset.signals.map((signal) => <span className={`oq-signal oq-signal-${signal.severity}`} key={`${asset.symbol}-${signal.type}`}>{signal.label}</span>)}
+            </div>
             <div className="oq-asset-metrics">
               <span>Teknik {scoreText(asset.technical_score)}</span>
               <span>Risk {scoreText(asset.risk_score)}</span>
               <span>{formatChange(asset.change_24h_pct)}</span>
+              <span>{asset.data_source.replace(/_/g, " ")}</span>
             </div>
             <div className="oq-two-col">
               <div>
