@@ -22,6 +22,7 @@ from app.api.v1.health_routes import health_bp
 from app.api.v1.history_routes import history_bp
 from app.api.v1.market_routes import market_bp
 from app.api.v1.limits_routes import limits_bp
+from app.api.v1.notification_routes import notification_bp
 from app.api.v1.portfolio_routes import portfolio_bp
 from app.api.v1.profile_routes import profile_bp
 from app.api.v1.scenario_routes import scenario_bp
@@ -42,6 +43,7 @@ def register_routes(app: Flask) -> None:
     app.register_blueprint(scenario_bp, url_prefix="/api/v1/scenario")
     app.register_blueprint(portfolio_bp, url_prefix="/api/v1/portfolio")
     app.register_blueprint(alert_bp, url_prefix="/api/v1/alerts")
+    app.register_blueprint(notification_bp, url_prefix="/api/v1/notifications")
     app.register_blueprint(watchlist_bp, url_prefix="/api/v1/watchlist")
     app.register_blueprint(history_bp, url_prefix="/api/v1/history")
     app.register_blueprint(billing_bp, url_prefix="/api/v1/billing")

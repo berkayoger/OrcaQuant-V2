@@ -1,9 +1,22 @@
+from app.extensions import db
+from app.models.user import User
+
+
 def _register(client, email: str):
     return client.post("/api/v1/auth/register", json={"email": email, "password": "Password123"}).get_json()
 
 
 def _auth_headers(client, email: str = "watcher@example.com"):
     token = _register(client, email)["access_token"]
+    return {"Authorization": f"Bearer {token}"}
+
+
+def _admin_headers(client, app, email: str = "product-admin@example.com"):
+    token = _register(client, email)["access_token"]
+    with app.app_context():
+        user = User.query.filter_by(email=email).one()
+        user.role = "admin"
+        db.session.commit()
     return {"Authorization": f"Bearer {token}"}
 
 
@@ -102,7 +115,7 @@ def test_alert_rules_and_suggestions(client):
     assert delete.get_json()["data"]["deleted"] is True
 
 
-def test_alert_rule_engine_triggers_and_respects_cooldown(client):
+def test_alert_rule_engine_triggers_and_delivers_notification_with_cooldown(client):
     headers = _auth_headers(client, "alert-engine@example.com")
 
     create = client.post(
@@ -114,22 +127,36 @@ def test_alert_rule_engine_triggers_and_respects_cooldown(client):
             "condition": "<=",
             "threshold": 100,
             "cooldown_minutes": 60,
-            "channels": ["in_app"],
+            "channels": ["in_app", "email"],
         },
     )
     assert create.status_code == 201
     created_rule = create.get_json()["data"]
     rule_id = created_rule["id"]
     assert created_rule["cooldown_minutes"] == 60
-    assert created_rule["channels"] == ["in_app"]
+    assert created_rule["channels"] == ["in_app", "email"]
 
     first_evaluation = client.post(f"/api/v1/alerts/{rule_id}/evaluate", headers=headers)
     assert first_evaluation.status_code == 200
     first_data = first_evaluation.get_json()["data"]
     assert first_data["evaluated"] == 1
     assert first_data["triggered_count"] == 1
+    assert first_data["delivered_count"] == 1
+    assert first_data["delivery_status"] == "in_app_persisted"
     assert first_data["results"][0]["triggered"] is True
-    assert first_data["results"][0]["last_event"]["delivery_status"] == "pending_delivery_worker"
+    assert first_data["deliveries"][0]["delivery_status"]["in_app"] == "created"
+    assert first_data["deliveries"][0]["delivery_status"]["email"] == "not_configured"
+
+    notifications = client.get("/api/v1/notifications/", headers=headers)
+    assert notifications.status_code == 200
+    notification_data = notifications.get_json()["data"]
+    assert notification_data["unread_count"] == 1
+    assert notification_data["items"][0]["type"] == "alert"
+    notification_id = notification_data["items"][0]["id"]
+
+    read = client.patch(f"/api/v1/notifications/{notification_id}/read", headers=headers)
+    assert read.status_code == 200
+    assert read.get_json()["data"]["status"] == "read"
 
     second_evaluation = client.post("/api/v1/alerts/evaluate", headers=headers)
     assert second_evaluation.status_code == 200
@@ -137,6 +164,7 @@ def test_alert_rule_engine_triggers_and_respects_cooldown(client):
     assert second_data["evaluated"] == 1
     assert second_data["triggered_count"] == 0
     assert second_data["suppressed_count"] == 1
+    assert second_data["delivered_count"] == 0
     assert second_data["results"][0]["status"] == "suppressed_by_cooldown"
 
     list_response = client.get("/api/v1/alerts/", headers=headers)
@@ -147,7 +175,41 @@ def test_alert_rule_engine_triggers_and_respects_cooldown(client):
     assert rule["last_value"] is not None
 
 
-def test_expanded_product_feature_suite_endpoints(client):
+def test_daily_brief_notification_center_flow(client):
+    headers = _auth_headers(client, "brief@example.com")
+
+    create = client.post("/api/v1/notifications/daily-brief", headers=headers, json={"symbols": ["BTC", "ETH"]})
+    assert create.status_code == 200
+    payload = create.get_json()["data"]
+    assert payload["created"] is True
+    assert payload["notification"]["type"] == "daily_brief"
+    assert payload["brief"]["module"] == "orca_daily_brief"
+
+    duplicate = client.post("/api/v1/notifications/daily-brief", headers=headers, json={"symbols": ["BTC", "ETH"]})
+    assert duplicate.status_code == 200
+    assert duplicate.get_json()["data"]["created"] is False
+
+    unread = client.get("/api/v1/notifications/?status=unread", headers=headers)
+    assert unread.status_code == 200
+    assert unread.get_json()["data"]["unread_count"] == 1
+
+    mark_all = client.patch("/api/v1/notifications/read-all", headers=headers)
+    assert mark_all.status_code == 200
+    assert mark_all.get_json()["data"]["updated"] == 1
+
+
+def test_admin_alert_delivery_runner_requires_admin(client, app):
+    assert client.post("/api/v1/alerts/evaluate-all").status_code == 401
+    plain = _auth_headers(client, "plain-delivery@example.com")
+    assert client.post("/api/v1/alerts/evaluate-all", headers=plain).status_code == 403
+
+    admin = _admin_headers(client, app)
+    response = client.post("/api/v1/alerts/evaluate-all", headers=admin)
+    assert response.status_code == 200
+    assert response.get_json()["data"]["delivery_status"] == "in_app_persisted"
+
+
+def test_expanded_product_feature_suite_endpoints(client, app):
     daily = client.get("/api/v1/dashboard/daily-brief?symbols=BTC,ETH,SOL")
     assert daily.status_code == 200
     daily_payload = daily.get_json()
@@ -182,6 +244,11 @@ def test_expanded_product_feature_suite_endpoints(client):
     plans = client.get("/api/v1/dashboard/plans")
     assert plans.status_code == 200
     assert [plan["key"] for plan in plans.get_json()["plans"]] == ["free", "pro", "premium"]
+
+    assert client.get("/api/v1/dashboard/admin/analytics").status_code == 401
+    admin_analytics = client.get("/api/v1/dashboard/admin/analytics", headers=_admin_headers(client, app, "product-analytics@example.com"))
+    assert admin_analytics.status_code == 200
+    assert admin_analytics.get_json()["module"] == "admin_product_analytics"
 
     suite = client.get("/api/v1/dashboard/features/suite?symbols=BTC,ETH,SOL")
     assert suite.status_code == 200

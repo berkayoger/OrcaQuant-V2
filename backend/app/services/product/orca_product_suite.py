@@ -34,7 +34,8 @@ class OrcaProductSuite:
             "risk_flags": risk_flags,
             "watchpoints": cockpit["market_overview"]["watchpoints"],
             "suggested_alerts": cockpit["suggested_alerts"][:5],
-            "delivery_ready": ["in_app", "email", "telegram"],
+            "delivery_ready": ["in_app"],
+            "external_delivery_pending": ["email", "telegram", "push", "sms"],
             "data_boundary": "Generated from Market Cockpit signals; external news and social sentiment are not included yet.",
         }
 
@@ -130,19 +131,19 @@ class OrcaProductSuite:
                     "key": "free",
                     "name": "Free",
                     "limits": {"watchlist_symbols": 5, "active_alerts": 3, "radar_variants": 2, "portfolio_slots": 0},
-                    "features": ["Market Cockpit", "Basic Orca Radar", "Local alert drafts"],
+                    "features": ["Market Cockpit", "Basic Orca Radar", "In-app notifications", "Local alert drafts"],
                 },
                 {
                     "key": "pro",
                     "name": "Pro",
                     "limits": {"watchlist_symbols": 25, "active_alerts": 25, "radar_variants": 6, "portfolio_slots": 3},
-                    "features": ["Advanced Radar", "Alert Rule Engine", "Daily Brief", "Portfolio Assistant", "Email/Telegram delivery ready"],
+                    "features": ["Advanced Radar", "Alert Rule Engine", "Daily Brief", "Portfolio Assistant", "Notification Center", "Email/Telegram delivery contract"],
                 },
                 {
                     "key": "premium",
                     "name": "Premium",
                     "limits": {"watchlist_symbols": "unlimited", "active_alerts": "unlimited", "radar_variants": "all", "portfolio_slots": "unlimited"},
-                    "features": ["Backtest reports", "Whale/funding/OI radar", "Admin analytics", "Priority data providers", "Advanced portfolio risk"],
+                    "features": ["Backtest reports", "Whale/funding/OI radar", "Admin analytics", "Priority data providers", "Advanced portfolio risk", "External delivery adapters"],
                 },
             ],
         }
@@ -166,7 +167,9 @@ class OrcaProductSuite:
             },
             "product_health": [
                 {"key": "alert_engine", "status": "active"},
-                {"key": "notification_delivery", "status": "pending_worker"},
+                {"key": "notification_center", "status": "active"},
+                {"key": "in_app_delivery", "status": "active"},
+                {"key": "external_delivery", "status": "needs_provider_config"},
                 {"key": "realtime_streaming", "status": "planned"},
                 {"key": "external_sentiment", "status": "planned"},
                 {"key": "backtest_reports", "status": "contract_ready"},
@@ -189,7 +192,7 @@ class OrcaProductSuite:
             "plans": self.build_plan_entitlements()["plans"],
             "admin_analytics": self.build_admin_analytics(),
             "feature_boundaries": {
-                "notification_delivery": "Alert events are produced; email/push/Telegram sender workers are next.",
+                "notification_delivery": "In-app notification persistence is active; email/push/Telegram sender adapters are next.",
                 "live_provider_expansion": "Provider interface exists; additional providers and realtime streaming are next.",
                 "news_sentiment": "Contract planned; external news/social sources not wired yet.",
                 "backtest": "Contract planned; historical provider and signal outcome tracking are next.",

@@ -4,8 +4,10 @@ from flask import Blueprint, g, request
 
 from app.common.responses import created, error_response, ok
 from app.core.security.auth_guard import require_auth
+from app.core.security.permission_guard import require_role
 from app.extensions import db
 from app.models.alert_rule import AlertRule
+from app.services.alerts.alert_delivery_service import AlertDeliveryService
 from app.services.alerts.alert_rule_engine import AlertRuleEngine
 from app.services.dashboard.market_cockpit_service import MarketCockpitService
 
@@ -66,7 +68,15 @@ def create_alert_rule():
 @alert_bp.post("/evaluate")
 @require_auth
 def evaluate_current_user_alerts():
-    result = AlertRuleEngine().evaluate_for_user(g.current_user.id)
+    result = AlertDeliveryService().evaluate_and_deliver_for_user(g.current_user.id)
+    return ok(result)
+
+
+@alert_bp.post("/evaluate-all")
+@require_auth
+@require_role("admin")
+def evaluate_all_alerts():
+    result = AlertDeliveryService().evaluate_and_deliver_all()
     return ok(result)
 
 
@@ -88,7 +98,7 @@ def update_alert_rule(rule_id: str):
 @alert_bp.post("/<rule_id>/evaluate")
 @require_auth
 def evaluate_single_alert_rule(rule_id: str):
-    result = AlertRuleEngine().evaluate_rule_for_user(rule_id=rule_id, user_id=g.current_user.id)
+    result = AlertDeliveryService().evaluate_and_deliver_rule_for_user(rule_id=rule_id, user_id=g.current_user.id)
     if result is None:
         return error_response("not_found", "Alert rule not found", 404)
     return ok(result)
