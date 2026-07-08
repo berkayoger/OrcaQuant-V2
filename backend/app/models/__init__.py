@@ -1,3 +1,4 @@
+from app.models.account_verification_code import AccountVerificationCode
 from app.models.alert_rule import AlertRule
 from app.models.analysis_result import AnalysisResult
 from app.models.api_key import ApiKey
@@ -26,6 +27,7 @@ from app.models.subscription import Subscription
 from app.models.usage_event import UsageEvent
 from app.models.user import User
 from app.models.user_profile import UserProfile
+from app.models.username_reservation import UsernameReservation
 from app.models.watchlist import Watchlist
 from app.models.audit_event import AuditEvent
 from app.models.payment import PaymentTransaction
