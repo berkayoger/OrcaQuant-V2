@@ -18,6 +18,8 @@ def validate_runtime_config(app: Flask, selected_env: str) -> None:
     _validate_positive_int(app, "MARKET_DATA_TIMEOUT_SECONDS")
     _validate_positive_int(app, "MARKET_DATA_CACHE_TTL_SECONDS")
     _validate_positive_int(app, "PAYMENT_PROVIDER_TIMEOUT_SECONDS")
+    _validate_positive_int(app, "ACCOUNT_VERIFICATION_CODE_TTL_MINUTES")
+    _validate_positive_int(app, "ACCOUNT_VERIFICATION_MAX_ATTEMPTS")
 
     allowed = app.config.get("CORS_ALLOWED_ORIGINS", []) or []
     if not allowed:
@@ -30,6 +32,7 @@ def validate_runtime_config(app: Flask, selected_env: str) -> None:
         raise RuntimeError("SECRET_KEY must not use development default in production")
 
     _validate_billing_config(app, selected_env)
+    _validate_account_config(app, selected_env)
 
 
 def _validate_positive_int(app: Flask, key: str) -> None:
@@ -46,6 +49,14 @@ def _validate_http_url(value: str, message: str) -> None:
 
 def _is_missing(value: object) -> bool:
     return str(value or "").strip().lower() in _PLACEHOLDER_VALUES
+
+
+def _validate_account_config(app: Flask, selected_env: str) -> None:
+    channel = str(app.config.get("ACCOUNT_CODE_CHANNEL", "email")).strip().lower()
+    if channel not in {"email", "sms", "dev"}:
+        raise RuntimeError("ACCOUNT_CODE_CHANNEL must be one of: dev, email, sms")
+    if selected_env == "production" and bool(app.config.get("ACCOUNT_CODE_DEBUG_RESPONSE", False)):
+        raise RuntimeError("ACCOUNT_CODE_DEBUG_RESPONSE must be disabled in production")
 
 
 def _validate_billing_config(app: Flask, selected_env: str) -> None:
