@@ -19,6 +19,11 @@ class BaseConfig:
     MARKET_DATA_TIMEOUT_SECONDS = int(os.getenv("MARKET_DATA_TIMEOUT_SECONDS", "10"))
     MARKET_DATA_CACHE_TTL_SECONDS = int(os.getenv("MARKET_DATA_CACHE_TTL_SECONDS", "300"))
 
+    ACCOUNT_VERIFICATION_CODE_TTL_MINUTES = int(os.getenv("ACCOUNT_VERIFICATION_CODE_TTL_MINUTES", "10"))
+    ACCOUNT_VERIFICATION_MAX_ATTEMPTS = int(os.getenv("ACCOUNT_VERIFICATION_MAX_ATTEMPTS", "5"))
+    ACCOUNT_CODE_DEBUG_RESPONSE = os.getenv("ACCOUNT_CODE_DEBUG_RESPONSE", "false").lower() == "true"
+    ACCOUNT_CODE_CHANNEL = os.getenv("ACCOUNT_CODE_CHANNEL", "email").strip().lower()
+
     # External billing provider boundary. Provider adapters must read through
     # these settings instead of reaching into os.environ directly.
     BILLING_PROVIDER = os.getenv("BILLING_PROVIDER", "fake").strip().lower()
@@ -42,6 +47,7 @@ class TestingConfig(BaseConfig):
     TESTING = True
     SECRET_KEY = "test-secret"
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+    ACCOUNT_CODE_DEBUG_RESPONSE = True
 
 
 class ProductionConfig(BaseConfig):

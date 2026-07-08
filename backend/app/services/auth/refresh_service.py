@@ -31,7 +31,19 @@ class RefreshService:
         if not user or not user.get("is_active"):
             self.session_service.revoke_session(jti)
             raise AuthenticationError("Invalid user")
-        access_token = create_access_token(subject=user["id"], claims={"email": user["email"], "role": user["role"]})
+        access_token = create_access_token(subject=user["id"], claims={"email": user["email"], "role": user["role"], "token_version": user["token_version"]})
         new_refresh_token, new_jti = create_refresh_token(user["id"])
         self.session_service.rotate_refresh_session(old_jti=jti, user_id=user["id"], new_refresh_token=new_refresh_token, new_jti=new_jti)
-        return {"access_token": access_token, "refresh_token": new_refresh_token, "token_type": "bearer", "user": {"id": user["id"], "email": user["email"], "role": user["role"], "plan_code": user.get("plan_code")}}
+        return {
+            "access_token": access_token,
+            "refresh_token": new_refresh_token,
+            "token_type": "bearer",
+            "user": {
+                "id": user["id"],
+                "email": user["email"],
+                "username": user.get("username"),
+                "role": user["role"],
+                "plan_code": user.get("plan_code"),
+                "is_email_verified": user.get("is_email_verified"),
+            },
+        }

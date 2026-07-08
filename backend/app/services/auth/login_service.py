@@ -23,6 +23,6 @@ class LoginService:
         if not user or not verify_password(request.password, user["password_hash"]):
             raise AuthenticationError("Invalid email or password")
 
-        access_token = create_access_token(subject=user["id"], claims={"email": user["email"], "role": user["role"]})
+        access_token = create_access_token(subject=user["id"], claims={"email": user["email"], "role": user["role"], "token_version": user["token_version"]})
         refresh_token, _ = create_refresh_token(user["id"])
         return AuthResponse(access_token=access_token, refresh_token=refresh_token, user=user).model_dump()

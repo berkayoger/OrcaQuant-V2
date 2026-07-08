@@ -16,6 +16,18 @@
 - `ENABLE_REALTIME`: feature toggle.
 - `MAX_CONTENT_LENGTH`: max payload bytes.
 
+## Account lifecycle / verification codes
+
+- `ACCOUNT_VERIFICATION_CODE_TTL_MINUTES`: how long login/email/password-reset codes remain valid.
+- `ACCOUNT_VERIFICATION_MAX_ATTEMPTS`: failed attempts before a code is locked.
+- `ACCOUNT_CODE_CHANNEL`: delivery channel boundary. Supported values: `email`, `sms`, `dev`.
+- `ACCOUNT_CODE_DEBUG_RESPONSE`: when true, debug/test responses include the raw code. Must remain false in production.
+
+Production guardrails:
+
+- `ACCOUNT_CODE_DEBUG_RESPONSE=true` is blocked in production.
+- A real email/SMS sender should be wired inside `VerificationDeliveryService`; routes should not import provider SDKs directly.
+
 ## Billing provider boundary
 
 - `BILLING_PROVIDER`: active provider key. Supported values: `fake`, `iyzico`.

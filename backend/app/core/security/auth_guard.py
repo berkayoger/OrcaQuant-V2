@@ -18,6 +18,9 @@ def require_auth(fn):
         user = db.session.get(User, payload.get("sub"))
         if not user or not user.is_active:
             return error_response("unauthorized", "Invalid user", 401)
+        token_version = payload.get("token_version")
+        if token_version is not None and int(token_version) != int(user.token_version or 0):
+            return error_response("unauthorized", "Stale access token", 401)
         g.current_user = user
         return fn(*args, **kwargs)
     return wrapper
