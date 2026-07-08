@@ -1,1 +1,1 @@
-"""Placeholder module."""
+"""Alert rule services."""
