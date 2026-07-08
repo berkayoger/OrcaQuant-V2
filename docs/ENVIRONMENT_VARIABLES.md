@@ -16,6 +16,27 @@
 - `ENABLE_REALTIME`: feature toggle.
 - `MAX_CONTENT_LENGTH`: max payload bytes.
 
+## Billing provider boundary
+
+- `BILLING_PROVIDER`: active provider key. Supported values: `fake`, `iyzico`.
+- `BILLING_ALLOWED_CURRENCIES`: comma-separated ISO-like currency allowlist, for example `TRY,USD,EUR`.
+- `BILLING_CHECKOUT_SUCCESS_URL`: frontend URL users return to after successful checkout.
+- `BILLING_CHECKOUT_FAILURE_URL`: frontend URL users return to after failed/cancelled checkout.
+- `BILLING_CALLBACK_URL`: backend callback/webhook URL registered with the payment provider.
+- `PAYMENT_PROVIDER_TIMEOUT_SECONDS`: outbound provider timeout for the future SDK/API call.
+
+### Iyzico adapter
+
+- `IYZICO_API_KEY`: Iyzico API key.
+- `IYZICO_SECRET`: Iyzico secret/signing key.
+- `IYZICO_BASE_URL`: Iyzico API base URL. Use the sandbox URL outside production.
+
+Production guardrails:
+
+- `BILLING_PROVIDER=fake` is blocked when `ENABLE_BILLING=true` and `FLASK_ENV=production`.
+- `BILLING_PROVIDER=iyzico` requires `IYZICO_API_KEY`, `IYZICO_SECRET`, and `IYZICO_BASE_URL` in production.
+- Checkout/callback URLs must be valid `http` or `https` URLs.
+
 ## Market data
 
 - `MARKET_DATA_PROVIDER`
