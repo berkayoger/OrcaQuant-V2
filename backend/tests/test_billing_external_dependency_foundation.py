@@ -14,7 +14,7 @@ def _create_user_with_headers(email: str = "billing@example.com") -> tuple[User,
     return user, {"Authorization": f"Bearer {token}"}
 
 
-def test_billing_status_reports_provider_readiness(app, client):
+def test_billing_status_reports_provider_readiness(app, client, db_session):
     app.config.update(
         ENABLE_BILLING=True,
         BILLING_PROVIDER="iyzico",
@@ -35,7 +35,7 @@ def test_billing_status_reports_provider_readiness(app, client):
     assert "iyzico" in data["supported_providers"]
 
 
-def test_fake_billing_checkout_and_callback_flow(app, client):
+def test_fake_billing_checkout_and_callback_flow(app, client, db_session):
     app.config.update(ENABLE_BILLING=True, BILLING_PROVIDER="fake")
     plan = Plan(code="pro", name="Pro")
     db.session.add(plan)
@@ -77,7 +77,7 @@ def test_fake_billing_checkout_and_callback_flow(app, client):
     assert PaymentEvent.query.count() == 1
 
 
-def test_idempotent_billing_initiation_reuses_transaction(app, client):
+def test_idempotent_billing_initiation_reuses_transaction(app, client, db_session):
     app.config.update(ENABLE_BILLING=True, BILLING_PROVIDER="fake")
     _, auth_headers = _create_user_with_headers("billing-idempotency@example.com")
 
