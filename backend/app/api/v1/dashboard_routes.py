@@ -1,5 +1,7 @@
 from flask import Blueprint, jsonify, request
 
+from app.core.security.auth_guard import require_auth
+from app.core.security.permission_guard import require_role
 from app.services.dashboard.market_cockpit_service import MarketCockpitService
 from app.services.product.orca_product_suite import OrcaProductSuite
 
@@ -55,6 +57,8 @@ def get_plan_entitlements():
 
 
 @dashboard_bp.get("/admin/analytics")
+@require_auth
+@require_role("admin")
 def get_admin_product_analytics():
     return jsonify(OrcaProductSuite().build_admin_analytics()), 200
 
