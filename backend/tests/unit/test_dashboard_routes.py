@@ -100,3 +100,48 @@ def test_alert_rules_and_suggestions(client):
     delete = client.delete(f"/api/v1/alerts/{rule_id}", headers=headers)
     assert delete.status_code == 200
     assert delete.get_json()["data"]["deleted"] is True
+
+
+def test_alert_rule_engine_triggers_and_respects_cooldown(client):
+    headers = _auth_headers(client, "alert-engine@example.com")
+
+    create = client.post(
+        "/api/v1/alerts/",
+        headers=headers,
+        json={
+            "symbol": "btc",
+            "metric": "risk_score",
+            "condition": "<=",
+            "threshold": 100,
+            "cooldown_minutes": 60,
+            "channels": ["in_app"],
+        },
+    )
+    assert create.status_code == 201
+    created_rule = create.get_json()["data"]
+    rule_id = created_rule["id"]
+    assert created_rule["cooldown_minutes"] == 60
+    assert created_rule["channels"] == ["in_app"]
+
+    first_evaluation = client.post(f"/api/v1/alerts/{rule_id}/evaluate", headers=headers)
+    assert first_evaluation.status_code == 200
+    first_data = first_evaluation.get_json()["data"]
+    assert first_data["evaluated"] == 1
+    assert first_data["triggered_count"] == 1
+    assert first_data["results"][0]["triggered"] is True
+    assert first_data["results"][0]["last_event"]["delivery_status"] == "pending_delivery_worker"
+
+    second_evaluation = client.post("/api/v1/alerts/evaluate", headers=headers)
+    assert second_evaluation.status_code == 200
+    second_data = second_evaluation.get_json()["data"]
+    assert second_data["evaluated"] == 1
+    assert second_data["triggered_count"] == 0
+    assert second_data["suppressed_count"] == 1
+    assert second_data["results"][0]["status"] == "suppressed_by_cooldown"
+
+    list_response = client.get("/api/v1/alerts/", headers=headers)
+    assert list_response.status_code == 200
+    rule = list_response.get_json()["data"]["items"][0]
+    assert rule["trigger_count"] == 1
+    assert rule["last_triggered_at"]
+    assert rule["last_value"] is not None
