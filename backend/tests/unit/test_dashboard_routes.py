@@ -145,3 +145,49 @@ def test_alert_rule_engine_triggers_and_respects_cooldown(client):
     assert rule["trigger_count"] == 1
     assert rule["last_triggered_at"]
     assert rule["last_value"] is not None
+
+
+def test_expanded_product_feature_suite_endpoints(client):
+    daily = client.get("/api/v1/dashboard/daily-brief?symbols=BTC,ETH,SOL")
+    assert daily.status_code == 200
+    daily_payload = daily.get_json()
+    assert daily_payload["module"] == "orca_daily_brief"
+    assert daily_payload["investment_advice"] is False
+    assert daily_payload["leaders"]
+    assert daily_payload["suggested_alerts"]
+
+    asset = client.get("/api/v1/dashboard/assets/BTC")
+    assert asset.status_code == 200
+    asset_payload = asset.get_json()
+    assert asset_payload["module"] == "asset_detail"
+    assert asset_payload["asset"]["symbol"] == "BTC"
+    assert asset_payload["quick_actions"]
+
+    radar_v2 = client.get("/api/v1/dashboard/radar/variants?symbols=BTC,ETH,SOL")
+    assert radar_v2.status_code == 200
+    variants = radar_v2.get_json()["variants"]
+    assert {"daily_top_5", "momentum_radar", "risk_radar", "volume_radar", "trend_radar", "pump_risk_watch"}.issubset(variants.keys())
+
+    portfolio = client.post(
+        "/api/v1/dashboard/portfolio/assistant",
+        json={"holdings": [{"symbol": "BTC", "allocation_pct": 60}, {"symbol": "ETH", "allocation_pct": 40}]},
+    )
+    assert portfolio.status_code == 200
+    portfolio_payload = portfolio.get_json()
+    assert portfolio_payload["module"] == "portfolio_assistant"
+    assert portfolio_payload["holdings"]
+    assert portfolio_payload["insights"]
+    assert portfolio_payload["investment_advice"] is False
+
+    plans = client.get("/api/v1/dashboard/plans")
+    assert plans.status_code == 200
+    assert [plan["key"] for plan in plans.get_json()["plans"]] == ["free", "pro", "premium"]
+
+    suite = client.get("/api/v1/dashboard/features/suite?symbols=BTC,ETH,SOL")
+    assert suite.status_code == 200
+    suite_payload = suite.get_json()
+    assert suite_payload["module"] == "orcaquant_product_suite"
+    assert suite_payload["daily_brief"]
+    assert suite_payload["radar_v2"]
+    assert suite_payload["portfolio_assistant"]
+    assert suite_payload["feature_boundaries"]
