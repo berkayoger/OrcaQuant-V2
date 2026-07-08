@@ -18,19 +18,22 @@ class UserRepository:
         if self.get_by_email(key):
             raise ValidationError("Email already registered", error_code=error_codes.DUPLICATE_RESOURCE_ERROR)
 
+        normalized_username = None
+        if username:
+            normalized_username, error = self.username_service.validate(username)
+            if error:
+                raise ValidationError(error)
+            availability = self.username_service.availability(normalized_username)
+            if not availability["available"]:
+                raise ValidationError("Username is not available", error_code=error_codes.DUPLICATE_RESOURCE_ERROR)
+
         default_plan = Plan.query.filter_by(code="free", is_active=True).one_or_none()
         user = User(email=key, password_hash=password_hash, plan_id=default_plan.id if default_plan else None)
         db.session.add(user)
         db.session.flush()
-        if username:
-            normalized, error = self.username_service.validate(username)
-            if error:
-                raise ValidationError(error)
-            availability = self.username_service.availability(normalized, current_user_id=user.id)
-            if not availability["available"]:
-                raise ValidationError("Username is not available", error_code=error_codes.DUPLICATE_RESOURCE_ERROR)
-            db.session.add(UsernameReservation(username=normalized, user_id=user.id, reason="registration"))
-            user.username = normalized
+        if normalized_username:
+            db.session.add(UsernameReservation(username=normalized_username, user_id=user.id, reason="registration"))
+            user.username = normalized_username
         db.session.commit()
         return self._to_dict(user)
 
