@@ -20,7 +20,7 @@ class CockpitAssetSeed:
 class MarketCockpitService:
     """Builds the product-facing Market Cockpit contract.
 
-    The cockpit now tries the configured live provider first and falls back to
+    The cockpit tries the configured live provider first and falls back to
     deterministic sample data when the provider is unavailable. This keeps the
     dashboard usable in local/dev environments while making the same contract
     ready for real market-data providers in production.
@@ -33,7 +33,6 @@ class MarketCockpitService:
         CockpitAssetSeed("AVAX", "Avalanche", "Layer-1 rotation"),
         CockpitAssetSeed("XRP", "XRP", "Liquidity watcher"),
     ]
-    _ASSET_NAMES = {asset.symbol: asset for asset in _DEFAULT_ASSETS}
     _MAX_SYMBOLS = 15
 
     def __init__(self, provider: OhlcvProviderProtocol | None = None, technical_engine: TechnicalSignalEngine | None = None) -> None:
@@ -141,7 +140,8 @@ class MarketCockpitService:
         normalized = self._normalize_symbols(symbols or [])[: self._MAX_SYMBOLS]
         if not normalized:
             return list(self._DEFAULT_ASSETS)
-        return [self._ASSET_NAMES.get(symbol, CockpitAssetSeed(symbol, symbol, "Custom watch")) for symbol in normalized]
+        asset_names = {asset.symbol: asset for asset in self._DEFAULT_ASSETS}
+        return [asset_names.get(symbol, CockpitAssetSeed(symbol, symbol, "Custom watch")) for symbol in normalized]
 
     @staticmethod
     def _normalize_symbols(symbols: list[str]) -> list[str]:
