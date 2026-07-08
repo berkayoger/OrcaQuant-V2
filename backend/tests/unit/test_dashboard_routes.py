@@ -1,3 +1,16 @@
+from app.extensions import db
+from app.models.user import User
+
+
+def _register(client, email: str):
+    return client.post("/api/v1/auth/register", json={"email": email, "password": "Password123"}).get_json()
+
+
+def _auth_headers(client, email: str = "watcher@example.com"):
+    token = _register(client, email)["access_token"]
+    return {"Authorization": f"Bearer {token}"}
+
+
 def test_market_cockpit_contract(client):
     response = client.get("/api/v1/dashboard/")
 
@@ -8,11 +21,22 @@ def test_market_cockpit_contract(client):
     assert payload["market_overview"]["regime"] in {"risk_on", "mixed", "risk_off"}
     assert len(payload["assets"]) == 5
     assert len(payload["radar"]) == 5
+    assert payload["suggested_alerts"]
 
     first_asset = payload["assets"][0]
-    assert {"symbol", "opportunity_score", "risk_score", "advantages", "risks", "plain_language_summary"}.issubset(first_asset.keys())
+    assert {"symbol", "opportunity_score", "risk_score", "advantages", "risks", "plain_language_summary", "signals", "suggested_alerts", "data_source"}.issubset(first_asset.keys())
     assert first_asset["advantages"]
     assert first_asset["risks"]
+    assert first_asset["signals"]
+
+
+def test_market_cockpit_accepts_symbol_and_watchlist_filters(client):
+    response = client.get("/api/v1/dashboard/?symbols=BTC,SOL&watchlist=SOL")
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert [asset["symbol"] for asset in payload["assets"]] == ["BTC", "SOL"]
+    assert [item["symbol"] for item in payload["watchlist_focus"]] == ["SOL"]
 
 
 def test_orca_radar_contract(client):
@@ -23,5 +47,60 @@ def test_orca_radar_contract(client):
     assert payload["module"] == "orca_radar"
     assert payload["investment_advice"] is False
     assert len(payload["items"]) == 5
+    assert payload["suggested_alerts"]
     scores = [item["opportunity_score"] for item in payload["items"]]
     assert scores == sorted(scores, reverse=True)
+
+
+def test_watchlist_crud_and_cockpit(client):
+    headers = _auth_headers(client)
+
+    empty = client.get("/api/v1/watchlist/", headers=headers)
+    assert empty.status_code == 200
+    assert empty.get_json()["data"]["symbols"] == []
+
+    replace = client.put("/api/v1/watchlist/", headers=headers, json={"symbols": ["btc", "SOL", "btc"]})
+    assert replace.status_code == 200
+    assert replace.get_json()["data"]["symbols"] == ["BTC", "SOL"]
+
+    add = client.post("/api/v1/watchlist/symbols", headers=headers, json={"symbol": "eth"})
+    assert add.status_code == 200
+    assert add.get_json()["data"]["symbols"] == ["BTC", "SOL", "ETH"]
+
+    cockpit = client.get("/api/v1/watchlist/cockpit", headers=headers)
+    assert cockpit.status_code == 200
+    data = cockpit.get_json()["data"]
+    assert data["watchlist_focus"]
+    assert {item["symbol"] for item in data["watchlist_focus"]} == {"BTC", "SOL", "ETH"}
+
+    remove = client.delete("/api/v1/watchlist/symbols/SOL", headers=headers)
+    assert remove.status_code == 200
+    assert remove.get_json()["data"]["symbols"] == ["BTC", "ETH"]
+
+
+def test_alert_rules_and_suggestions(client):
+    headers = _auth_headers(client, "alerts@example.com")
+
+    suggestions = client.get("/api/v1/alerts/suggestions?symbols=BTC,SOL")
+    assert suggestions.status_code == 200
+    assert suggestions.get_json()["data"]["items"]
+
+    create = client.post(
+        "/api/v1/alerts/",
+        headers=headers,
+        json={"symbol": "btc", "metric": "opportunity_score", "condition": ">=", "threshold": 72},
+    )
+    assert create.status_code == 201
+    rule_id = create.get_json()["data"]["id"]
+
+    list_response = client.get("/api/v1/alerts/", headers=headers)
+    assert list_response.status_code == 200
+    assert any(item["id"] == rule_id for item in list_response.get_json()["data"]["items"])
+
+    patch = client.patch(f"/api/v1/alerts/{rule_id}", headers=headers, json={"enabled": False})
+    assert patch.status_code == 200
+    assert patch.get_json()["data"]["enabled"] is False
+
+    delete = client.delete(f"/api/v1/alerts/{rule_id}", headers=headers)
+    assert delete.status_code == 200
+    assert delete.get_json()["data"]["deleted"] is True
