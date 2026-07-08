@@ -18,7 +18,7 @@ class AccountVerificationCode(UUIDPrimaryKeyMixin, TimestampMixin, db.Model):
     consumed_at = db.Column(db.DateTime(timezone=True), nullable=True)
     delivery_channel = db.Column(db.String(32), nullable=False, default="email")
     delivery_status = db.Column(db.String(32), nullable=False, default="queued")
-    metadata = db.Column(db.JSON, nullable=True)
+    data = db.Column(db.JSON, nullable=True)
 
     def is_expired(self) -> bool:
         now = datetime.now(UTC)
