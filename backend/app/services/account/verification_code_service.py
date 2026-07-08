@@ -45,7 +45,7 @@ class AccountVerificationCodeService:
             max_attempts=self._max_attempts(),
             delivery_channel=str(current_app.config.get("ACCOUNT_CODE_CHANNEL", "email")),
             delivery_status="queued",
-            metadata={"requested_at": datetime.now(UTC).isoformat()},
+            data={"requested_at": datetime.now(UTC).isoformat()},
         )
         db.session.add(row)
         db.session.flush()
