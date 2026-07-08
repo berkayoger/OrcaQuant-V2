@@ -8,6 +8,7 @@ from flask import Flask
 
 SUPPORTED_BILLING_PROVIDERS = {"fake", "iyzico"}
 _PLACEHOLDER_VALUES = {"", "placeholder", "change-me", "set-me", "todo"}
+_PRODUCTION_LOCAL_HOSTS = {"localhost", "127.0.0.1", "0.0.0.0"}
 
 
 def validate_runtime_config(app: Flask, selected_env: str) -> None:
@@ -57,12 +58,19 @@ def _validate_billing_config(app: Flask, selected_env: str) -> None:
     if not allowed_currencies:
         raise RuntimeError("BILLING_ALLOWED_CURRENCIES must contain at least one currency")
 
-    for key in ["BILLING_CHECKOUT_SUCCESS_URL", "BILLING_CHECKOUT_FAILURE_URL", "BILLING_CALLBACK_URL"]:
+    billing_url_keys = ["BILLING_CHECKOUT_SUCCESS_URL", "BILLING_CHECKOUT_FAILURE_URL", "BILLING_CALLBACK_URL"]
+    for key in billing_url_keys:
         _validate_http_url(str(app.config.get(key) or ""), f"{key} must be a valid http(s) URL")
 
     billing_enabled = bool(app.config.get("ENABLE_BILLING", False))
     if not billing_enabled:
         return
+
+    if selected_env == "production":
+        for key in billing_url_keys:
+            parsed = urlparse(str(app.config.get(key) or ""))
+            if parsed.hostname in _PRODUCTION_LOCAL_HOSTS:
+                raise RuntimeError(f"{key} must not point to localhost in production")
 
     if selected_env == "production" and provider == "fake":
         raise RuntimeError("BILLING_PROVIDER=fake is not allowed when ENABLE_BILLING=true in production")
