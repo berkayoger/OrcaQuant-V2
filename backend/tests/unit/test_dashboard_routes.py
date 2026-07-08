@@ -1,7 +1,3 @@
-from app.extensions import db
-from app.models.user import User
-
-
 def _register(client, email: str):
     return client.post("/api/v1/auth/register", json={"email": email, "password": "Password123"}).get_json()
 
