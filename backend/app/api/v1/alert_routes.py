@@ -6,16 +6,10 @@ from app.common.responses import created, error_response, ok
 from app.core.security.auth_guard import require_auth
 from app.extensions import db
 from app.models.alert_rule import AlertRule
+from app.services.alerts.alert_rule_engine import AlertRuleEngine
 from app.services.dashboard.market_cockpit_service import MarketCockpitService
 
 alert_bp = Blueprint("alerts", __name__)
-
-_ALLOWED_METRICS = {"price", "opportunity_score", "risk_score", "technical_score", "volume_score"}
-_ALLOWED_CONDITIONS = {">=", "<=", "crosses_above", "crosses_below"}
-
-
-def _normalize_symbol(symbol: str) -> str:
-    return "".join(ch for ch in str(symbol).upper().strip() if ch.isalnum())
 
 
 def _serialize(rule: AlertRule) -> dict:
@@ -29,40 +23,24 @@ def _serialize(rule: AlertRule) -> dict:
         "threshold": data.get("threshold"),
         "title": data.get("title"),
         "enabled": data.get("enabled", True),
+        "cooldown_minutes": data.get("cooldown_minutes", 60),
+        "channels": data.get("channels") or ["in_app"],
+        "last_value": data.get("last_value"),
+        "last_result": data.get("last_result"),
+        "last_evaluated_at": data.get("last_evaluated_at"),
+        "last_triggered_at": data.get("last_triggered_at"),
+        "trigger_count": data.get("trigger_count", 0),
+        "last_event": data.get("last_event"),
         "created_at": rule.created_at.isoformat() if rule.created_at else None,
         "updated_at": rule.updated_at.isoformat() if rule.updated_at else None,
     }
 
 
-def _validated_payload(payload: dict) -> tuple[dict | None, tuple | None]:
-    symbol = _normalize_symbol(payload.get("symbol") or "")
-    metric = str(payload.get("metric") or "").strip()
-    condition = str(payload.get("condition") or "").strip()
-    threshold = payload.get("threshold")
-    title = str(payload.get("title") or "").strip() or None
-    enabled = payload.get("enabled", True)
-
-    if not symbol:
-        return None, error_response("validation_error", "symbol is required", 400)
-    if metric not in _ALLOWED_METRICS:
-        return None, error_response("validation_error", f"metric must be one of {sorted(_ALLOWED_METRICS)}", 400)
-    if condition not in _ALLOWED_CONDITIONS:
-        return None, error_response("validation_error", f"condition must be one of {sorted(_ALLOWED_CONDITIONS)}", 400)
-    try:
-        threshold = float(threshold)
-    except (TypeError, ValueError):
-        return None, error_response("validation_error", "threshold must be numeric", 400)
-    if not isinstance(enabled, bool):
-        return None, error_response("validation_error", "enabled must be boolean", 400)
-
-    return {
-        "symbol": symbol,
-        "metric": metric,
-        "condition": condition,
-        "threshold": threshold,
-        "title": title or f"{symbol} {metric} {condition} {threshold}",
-        "enabled": enabled,
-    }, None
+def _normalize_payload(payload: dict, existing: dict | None = None) -> tuple[dict | None, tuple | None]:
+    data, error = AlertRuleEngine.normalize_rule_payload(payload, existing=existing)
+    if error:
+        return None, error_response("validation_error", error, 400)
+    return data, None
 
 
 @alert_bp.get("/")
@@ -76,7 +54,7 @@ def list_alert_rules():
 @require_auth
 def create_alert_rule():
     payload = request.get_json(silent=True) or {}
-    data, error = _validated_payload(payload)
+    data, error = _normalize_payload(payload)
     if error:
         return error
     row = AlertRule(user_id=g.current_user.id, data=data)
@@ -85,19 +63,35 @@ def create_alert_rule():
     return created(_serialize(row))
 
 
+@alert_bp.post("/evaluate")
+@require_auth
+def evaluate_current_user_alerts():
+    result = AlertRuleEngine().evaluate_for_user(g.current_user.id)
+    return ok(result)
+
+
 @alert_bp.patch("/<rule_id>")
 @require_auth
 def update_alert_rule(rule_id: str):
     row = AlertRule.query.filter_by(id=rule_id, user_id=g.current_user.id).one_or_none()
     if not row:
         return error_response("not_found", "Alert rule not found", 404)
-    payload = {**(row.data or {}), **(request.get_json(silent=True) or {})}
-    data, error = _validated_payload(payload)
+    payload = request.get_json(silent=True) or {}
+    data, error = _normalize_payload(payload, existing=row.data or {})
     if error:
         return error
     row.data = data
     db.session.commit()
     return ok(_serialize(row))
+
+
+@alert_bp.post("/<rule_id>/evaluate")
+@require_auth
+def evaluate_single_alert_rule(rule_id: str):
+    result = AlertRuleEngine().evaluate_rule_for_user(rule_id=rule_id, user_id=g.current_user.id)
+    if result is None:
+        return error_response("not_found", "Alert rule not found", 404)
+    return ok(result)
 
 
 @alert_bp.delete("/<rule_id>")
