@@ -188,7 +188,7 @@ export default function DashboardPage() {
       </section>
 
       <section className="oq-grid oq-grid-4">
-        <MetricCard label="Piyasa modu" value={regimeLabel(cockpit.market_overview.regime)} helper={cockpit.data_source.replaceAll("_", " ")} />
+        <MetricCard label="Piyasa modu" value={regimeLabel(cockpit.market_overview.regime)} helper={cockpit.data_source.replace(/_/g, " ")} />
         <MetricCard label="Teknik sağlık" value={scoreText(cockpit.market_overview.technical_health)} helper="Trend + momentum özeti" />
         <MetricCard label="Risk baskısı" value={scoreText(cockpit.market_overview.risk_pressure)} helper="Oynaklık ve uç sinyal filtresi" />
         <MetricCard label="Hacim ısısı" value={scoreText(cockpit.market_overview.volume_heat)} helper="Radar hareketliliği" />
