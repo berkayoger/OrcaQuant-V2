@@ -1,1 +1,1 @@
-"""Placeholder module."""
+"""Dashboard and Market Cockpit services."""
