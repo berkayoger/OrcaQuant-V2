@@ -6,8 +6,8 @@ from app.models.plan import Plan
 from app.models.user import User
 
 
-def _create_user_with_headers() -> tuple[User, dict[str, str]]:
-    user = User(email="billing@example.com", password_hash="hash")
+def _create_user_with_headers(email: str = "billing@example.com") -> tuple[User, dict[str, str]]:
+    user = User(email=email, password_hash="hash")
     db.session.add(user)
     db.session.commit()
     token = create_access_token(user.id)
@@ -79,8 +79,7 @@ def test_fake_billing_checkout_and_callback_flow(app, client):
 
 def test_idempotent_billing_initiation_reuses_transaction(app, client):
     app.config.update(ENABLE_BILLING=True, BILLING_PROVIDER="fake")
-    _create_user_with_headers()
-    _, auth_headers = _create_user_with_headers()
+    _, auth_headers = _create_user_with_headers("billing-idempotency@example.com")
 
     first = client.post(
         "/api/v1/billing/initiate",
