@@ -1,9 +1,22 @@
+from app.extensions import db
+from app.models.user import User
+
+
 def _register(client, email: str):
     return client.post("/api/v1/auth/register", json={"email": email, "password": "Password123"}).get_json()
 
 
 def _auth_headers(client, email: str = "watcher@example.com"):
     token = _register(client, email)["access_token"]
+    return {"Authorization": f"Bearer {token}"}
+
+
+def _admin_headers(client, app, email: str = "product-admin@example.com"):
+    token = _register(client, email)["access_token"]
+    with app.app_context():
+        user = User.query.filter_by(email=email).one()
+        user.role = "admin"
+        db.session.commit()
     return {"Authorization": f"Bearer {token}"}
 
 
@@ -185,7 +198,18 @@ def test_daily_brief_notification_center_flow(client):
     assert mark_all.get_json()["data"]["updated"] == 1
 
 
-def test_expanded_product_feature_suite_endpoints(client):
+def test_admin_alert_delivery_runner_requires_admin(client, app):
+    assert client.post("/api/v1/alerts/evaluate-all").status_code == 401
+    plain = _auth_headers(client, "plain-delivery@example.com")
+    assert client.post("/api/v1/alerts/evaluate-all", headers=plain).status_code == 403
+
+    admin = _admin_headers(client, app)
+    response = client.post("/api/v1/alerts/evaluate-all", headers=admin)
+    assert response.status_code == 200
+    assert response.get_json()["data"]["delivery_status"] == "in_app_persisted"
+
+
+def test_expanded_product_feature_suite_endpoints(client, app):
     daily = client.get("/api/v1/dashboard/daily-brief?symbols=BTC,ETH,SOL")
     assert daily.status_code == 200
     daily_payload = daily.get_json()
@@ -220,6 +244,11 @@ def test_expanded_product_feature_suite_endpoints(client):
     plans = client.get("/api/v1/dashboard/plans")
     assert plans.status_code == 200
     assert [plan["key"] for plan in plans.get_json()["plans"]] == ["free", "pro", "premium"]
+
+    assert client.get("/api/v1/dashboard/admin/analytics").status_code == 401
+    admin_analytics = client.get("/api/v1/dashboard/admin/analytics", headers=_admin_headers(client, app, "product-analytics@example.com"))
+    assert admin_analytics.status_code == 200
+    assert admin_analytics.get_json()["module"] == "admin_product_analytics"
 
     suite = client.get("/api/v1/dashboard/features/suite?symbols=BTC,ETH,SOL")
     assert suite.status_code == 200
