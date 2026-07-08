@@ -18,6 +18,7 @@ This document tracks the customer-facing feature contracts added after the Marke
 - Notification deduplication uses `source_event_key`, so the same alert event or same daily brief is not inserted repeatedly.
 - In-app delivery is implemented immediately; email, Telegram, SMS, and push are represented as `not_configured` until real providers are wired through environment-backed adapters.
 - Daily Brief can now be saved as a notification through the notification center API.
+- Admins can run an authenticated alert delivery pass with `POST /api/v1/alerts/evaluate-all`; this can later be called by Celery or a scheduled job.
 
 ## Important boundaries
 
@@ -35,6 +36,7 @@ This document tracks the customer-facing feature contracts added after the Marke
 - `GET /api/v1/dashboard/plans`
 - `GET /api/v1/dashboard/admin/analytics`
 - `GET /api/v1/dashboard/features/suite`
+- `POST /api/v1/alerts/evaluate-all`
 - `GET /api/v1/notifications`
 - `POST /api/v1/notifications/daily-brief`
 - `PATCH /api/v1/notifications/<notification_id>/read`
